@@ -1,0 +1,35 @@
+[project]
+name = "clinic-hub"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "django>=6.1",
+    "django-allauth>=65.19.1",
+    "django-environ>=0.14.0",
+    "django-filter>=26.1",
+    "django-stubs>=6.1.0",
+    "django-stubs-ext>=6.1.0",
+    "faker>=40.37.0",
+    "ipython>=9.17.0",
+    "psycopg2>=2.9.12",
+]
+
+[dependency-groups]
+dev = ["pre-commit>=4.6.2", "pyright>=1.1.411", "ruff>=0.16.5"]
+
+[tool.ruff]
+target-version = "py312"
+extend-exclude = ["*/migrations/*.py"]
+
+[tool.ruff.lint]
+select = ["DJ", "E", "F", "I", "UP", "B", "SIM"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
+
+[tool.pyright]
+pythonVersion = "3.12"
+exclude = ["**/migrations", "**/.venv"]
+typeCheckingMode = "standard"
