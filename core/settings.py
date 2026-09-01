@@ -106,9 +106,7 @@ DATABASES = {
 
 # Custom user model
 # https://docs.djangoproject.com/en/6.1/topics/auth/customizing/
-# (see "Substituting a custom User model")
-# Uncomment once the custom user model is implemented (e.g. `accounts.User`):
-# AUTH_USER_MODEL = "accounts.User"
+AUTH_USER_MODEL = "accounts.User"
 
 
 # Password validation
