@@ -12,20 +12,29 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 
 from pathlib import Path
 
+import environ
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+env = environ.Env(
+    DJANGO_DEBUG=(bool, False),
+)
+# Read the .env file if present (e.g. in local development). In production,
+# environment variables are typically provided by the platform instead.
+environ.Env.read_env(BASE_DIR / ".env")
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-9al0kyaepeoz8-hrpr-(!4%mxt#9px#n0gq5dq1)!ew25*9hcs"
+SECRET_KEY = env("DJANGO_SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env("DJANGO_DEBUG")
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=[])
 
 
 # Application definition
@@ -73,11 +82,23 @@ WSGI_APPLICATION = "core.wsgi.application"
 # https://docs.djangoproject.com/en/6.1/ref/settings/#databases
 
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
+    "default": env.db_url(
+        "DATABASE_URL",
+        default=(
+            f"postgres://{env('POSTGRES_USER', default='clinic_hub')}:"
+            f"{env('POSTGRES_PASSWORD', default='clinic_hub')}@"
+            f"{env('POSTGRES_HOST', default='localhost')}:"
+            f"{env('POSTGRES_PORT', default='5432')}/"
+            f"{env('POSTGRES_DB', default='clinic_hub')}"
+        ),
+    ),
 }
+
+
+# Custom user model
+# https://docs.djangoproject.com/en/6.1/topics/auth/customizing/#substituting-a-custom-user-model
+# Uncomment once the custom user model is implemented (e.g. in `accounts`):
+# AUTH_USER_MODEL = "accounts.User"
 
 
 # Password validation
@@ -104,7 +125,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = "UTC"
+TIME_ZONE = "Asia/Tehran"
 
 USE_I18N = True
 
@@ -115,13 +136,31 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.1/howto/static-files/
 
 STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+MEDIA_URL = "media/"
+MEDIA_ROOT = BASE_DIR / "media"
 
 
 # Email
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
 
-MAILERS = {
-    "default": {
-        "BACKEND": "django.core.mail.backends.console.EmailBackend",
-    },
-}
+if env.bool("DJANGO_EMAIL_USE_SMTP", default=False):
+    MAILERS = {
+        "default": {
+            "BACKEND": "django.core.mail.backends.smtp.EmailBackend",
+            "HOST": env("EMAIL_HOST"),
+            "PORT": env.int("EMAIL_PORT", default=587),
+            "USERNAME": env("EMAIL_HOST_USER", default=""),
+            "PASSWORD": env("EMAIL_HOST_PASSWORD", default=""),
+            "USE_TLS": env.bool("EMAIL_USE_TLS", default=True),
+        },
+    }
+else:
+    MAILERS = {
+        "default": {
+            "BACKEND": "django.core.mail.backends.console.EmailBackend",
+        },
+    }
+
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="webmaster@localhost")
