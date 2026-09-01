@@ -34,7 +34,10 @@ SECRET_KEY = env("DJANGO_SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env("DJANGO_DEBUG")
 
-ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=[])
+ALLOWED_HOSTS = env.list(
+    "DJANGO_ALLOWED_HOSTS",
+    default=[],  # pyright: ignore[reportArgumentType]
+)
 
 
 # Application definition
@@ -84,20 +87,21 @@ WSGI_APPLICATION = "core.wsgi.application"
 DATABASES = {
     "default": env.db_url(
         "DATABASE_URL",
-        default=(
-            f"postgres://{env('POSTGRES_USER', default='clinic_hub')}:"
-            f"{env('POSTGRES_PASSWORD', default='clinic_hub')}@"
-            f"{env('POSTGRES_HOST', default='localhost')}:"
-            f"{env('POSTGRES_PORT', default='5432')}/"
-            f"{env('POSTGRES_DB', default='clinic_hub')}"
+        default=(  # pyright: ignore[reportArgumentType]
+            f"postgres://{env.str('POSTGRES_USER', default='clinic_hub')}:"
+            f"{env.str('POSTGRES_PASSWORD', default='clinic_hub')}@"
+            f"{env.str('POSTGRES_HOST', default='localhost')}:"
+            f"{env.int('POSTGRES_PORT', default=5432)}/"
+            f"{env.str('POSTGRES_DB', default='clinic_hub')}"
         ),
     ),
 }
 
 
 # Custom user model
-# https://docs.djangoproject.com/en/6.1/topics/auth/customizing/#substituting-a-custom-user-model
-# Uncomment once the custom user model is implemented (e.g. in `accounts`):
+# https://docs.djangoproject.com/en/6.1/topics/auth/customizing/
+# (see "Substituting a custom User model")
+# Uncomment once the custom user model is implemented (e.g. `accounts.User`):
 # AUTH_USER_MODEL = "accounts.User"
 
 
@@ -106,7 +110,9 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
+        "NAME": (
+            "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"
+        ),
     },
     {
         "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
@@ -151,8 +157,8 @@ if env.bool("DJANGO_EMAIL_USE_SMTP", default=False):
             "BACKEND": "django.core.mail.backends.smtp.EmailBackend",
             "HOST": env("EMAIL_HOST"),
             "PORT": env.int("EMAIL_PORT", default=587),
-            "USERNAME": env("EMAIL_HOST_USER", default=""),
-            "PASSWORD": env("EMAIL_HOST_PASSWORD", default=""),
+            "USERNAME": env.str("EMAIL_HOST_USER", default=""),
+            "PASSWORD": env.str("EMAIL_HOST_PASSWORD", default=""),
             "USE_TLS": env.bool("EMAIL_USE_TLS", default=True),
         },
     }
@@ -163,4 +169,4 @@ else:
         },
     }
 
-DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="webmaster@localhost")
+DEFAULT_FROM_EMAIL = env.str("DEFAULT_FROM_EMAIL", default="webmaster@localhost")
