@@ -1,28 +1,38 @@
 from django.contrib.auth.hashers import check_password, make_password
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
+from django.core.validators import RegexValidator
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
-from core import settings
+from accounts.managers import UserManager
+
+phone_validator = RegexValidator(
+    regex=r"^09\d{9}$",
+    message=_("Phone number must be in the format '09xxxxxxxxx' (11 digits)."),
+    code="invalid_phone_number",
+)
 
 
 class User(AbstractUser):
+    username = None  # pyright: ignore[reportAssignmentType]
+    USERNAME_FIELD = "phone_number"
+    REQUIRED_FIELDS = ["first_name", "last_name"]
+
     class RoleChoices(models.TextChoices):
-        ADMIN = "admin", _("Admin")
         PATIENT = "patient", _("Patient")
         DOCTOR = "doctor", _("Doctor")
 
+    phone_number = models.CharField(
+        max_length=11, unique=True, validators=[phone_validator]
+    )
     role = models.CharField(
         max_length=10, choices=RoleChoices.choices, default=RoleChoices.PATIENT
     )
-
     updated_at = models.DateTimeField(auto_now=True)
 
-    @property
-    def is_admin(self) -> bool:
-        return self.role == self.RoleChoices.ADMIN
+    objects = UserManager()  # pyright: ignore[reportAssignmentType]
 
     @property
     def is_patient(self) -> bool:
@@ -32,10 +42,6 @@ class User(AbstractUser):
     def is_doctor(self) -> bool:
         return self.role == self.RoleChoices.DOCTOR
 
-    @property
-    def full_name(self) -> str:
-        return f"{self.first_name} {self.last_name}"
-
 
 class OTP(models.Model):
     class Purpose(models.TextChoices):
@@ -43,14 +49,7 @@ class OTP(models.Model):
         EMAIL_VERIFICATION = "email_verification", _("Email Verification")
         PASSWORD_RESET = "password_reset", _("Password Reset")
 
-    email = models.CharField(default="", max_length=256, blank=True)
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        related_name="otps",
-        null=True,
-        blank=True,
-        on_delete=models.CASCADE,
-    )
+    phone_number = models.CharField(max_length=11)
     purpose = models.CharField(
         max_length=32, default=Purpose.LOGIN, choices=Purpose.choices
     )
@@ -69,13 +68,12 @@ class OTP(models.Model):
         verbose_name_plural = "OTPs"
         ordering = ["-created_at"]
         indexes = (
-            models.Index(fields=["email", "purpose", "is_used", "expires_at"]),
-            models.Index(fields=["user", "purpose", "is_used", "expires_at"]),
-            models.Index(fields=["email", "created_at"]),
+            models.Index(fields=["phone_number", "purpose", "is_used", "expires_at"]),
+            models.Index(fields=["phone_number", "created_at"]),
         )
         constraints = (
             models.CheckConstraint(
-                condition=models.Q(user__isnull=False) | ~models.Q(email=""),
+                condition=~models.Q(phone_number=""),
                 name="otp_has_recipient",
             ),
             models.CheckConstraint(
@@ -85,7 +83,7 @@ class OTP(models.Model):
         )
 
     def __str__(self) -> str:
-        recipient = self.user.get_username() if self.user else self.email
+        recipient = self.phone_number
         status = "Used" if self.is_used else "Active/Unused"
         return f"OTP [{self.purpose}] for {recipient or 'Unknown'} ({status})"
 
@@ -101,8 +99,8 @@ class OTP(models.Model):
 
     def clean(self) -> None:
         super().clean()
-        if not self.user and not self.email:
+        if not self.phone_number:
             raise ValidationError(
-                _("An OTP must have an associated user or email."),
+                _("An OTP must have an associated phone number."),
                 code="missing_recipient",
             )
