@@ -68,8 +68,13 @@ class OTP(models.Model):
         verbose_name_plural = "OTPs"
         ordering = ["-created_at"]
         indexes = (
-            models.Index(fields=["phone_number", "purpose", "is_used", "expires_at"]),
-            models.Index(fields=["phone_number", "created_at"]),
+            models.Index(
+                fields=["phone_number", "purpose", "is_used", "expires_at"],
+                name="otp_lookup_idx",
+            ),
+            models.Index(
+                fields=["phone_number", "created_at"], name="otp_phone_created_idx"
+            ),
         )
         constraints = (
             models.CheckConstraint(
