@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     "accounts.apps.AccountsConfig",
     "appointments.apps.AppointmentsConfig",
     "doctors.apps.DoctorsConfig",
+    "patients.apps.PatientsConfig",
     "reviews.apps.ReviewsConfig",
     "wallet.apps.WalletConfig",
 ]
@@ -109,7 +110,7 @@ DATABASES = {
 AUTH_USER_MODEL = "accounts.User"
 
 AUTHENTICATION_BACKENDS = [
-    "accounts.backends.PhoneOTPBackend",
+    "accounts.backends.PhoneBackend",
     "django.contrib.auth.backends.ModelBackend",
 ]
 
