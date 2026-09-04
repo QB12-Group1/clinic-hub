@@ -12,6 +12,7 @@ dependencies = [
     "django-stubs-ext>=6.1.0",
     "faker>=40.37.0",
     "ipython==9.17.1",
+    "kavenegar>=1.1.2",
     "psycopg2>=2.9.12",
     "uvicorn[standard]>=0.52.4",
 ]

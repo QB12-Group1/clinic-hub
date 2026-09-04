@@ -1,3 +1,4 @@
+import os
 import string
 from datetime import timedelta
 
@@ -7,6 +8,7 @@ from django.utils import timezone
 from django.utils.crypto import get_random_string
 from django.utils.translation import gettext as _
 from django.utils.translation import ngettext
+from kavenegar import KavenegarAPI
 
 from accounts.models import OTP
 
@@ -61,7 +63,6 @@ class OTPService:
             )
 
         raw_code = cls.generate_code()
-        print(raw_code)
         expires_at = timezone.now() + timedelta(minutes=cls.EXPIRY_MINUTES)
 
         with transaction.atomic():
@@ -79,7 +80,14 @@ class OTPService:
             cache_key = f"otp_cooldown:{phone_number}:{purpose}"
             cache.set(cache_key, True, timeout=cls.COOLDOWN_SECONDS)
 
-        # TODO: actually send the raw code with sms
+        api_key = os.environ.get("KAVENEGAR_API_KEY")
+        api = KavenegarAPI(api_key)
+        params = {
+            "sender": "2000660110",
+            "receptor": phone_number,
+            "message": f"{raw_code}",
+        }
+        api.sms_send(params)
         return otp
 
     @classmethod
