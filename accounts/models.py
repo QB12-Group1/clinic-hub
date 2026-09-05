@@ -102,7 +102,7 @@ class OTP(models.Model):
         max_length=32, default=Purpose.LOGIN, choices=Purpose.choices
     )
     status = models.CharField(
-        max_length=16, default=Status.PENDING, choices=Purpose.choices, db_index=True
+        max_length=16, default=Status.PENDING, choices=Status.choices, db_index=True
     )
 
     code = models.CharField(max_length=128)
