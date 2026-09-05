@@ -1,57 +1,108 @@
+from typing import cast
+
 from django.contrib.auth.hashers import check_password, make_password
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
-from django.core.validators import RegexValidator
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
+import utils
 from accounts.managers import UserManager
-
-phone_validator = RegexValidator(
-    regex=r"^09\d{9}$",
-    message=_("Phone number must be in the format '09xxxxxxxxx' (11 digits)."),
-    code="invalid_phone_number",
-)
+from validators import PhoneNumberValidator
 
 
 class User(AbstractUser):
-    username = None  # pyright: ignore[reportAssignmentType]
-    USERNAME_FIELD = "phone_number"
-    REQUIRED_FIELDS = ["first_name", "last_name"]
+    REQUIRED_FIELDS = []
 
-    class RoleChoices(models.TextChoices):
-        PATIENT = "patient", _("Patient")
-        DOCTOR = "doctor", _("Doctor")
+    username = models.CharField(
+        max_length=150,
+        unique=True,
+        null=True,
+        blank=True,
+        help_text=_(
+            "Required for staff and admin users. Leave blank for normal OTP users."
+        ),
+    )
 
     phone_number = models.CharField(
-        max_length=11, unique=True, validators=[phone_validator]
+        max_length=11,
+        unique=True,
+        null=True,
+        blank=True,
+        validators=[PhoneNumberValidator()],
+        help_text=_("Required for regular users. Format: 09123456789"),
+        error_messages={"unique": _("A user with that phone number already exists.")},
     )
-    role = models.CharField(
-        max_length=10, choices=RoleChoices.choices, default=RoleChoices.PATIENT
-    )
-    updated_at = models.DateTimeField(auto_now=True)
 
     objects = UserManager()  # pyright: ignore[reportAssignmentType]
 
-    @property
-    def is_patient(self) -> bool:
-        return self.role == self.RoleChoices.PATIENT
+    class Meta(AbstractUser.Meta):
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(
+                    is_staff=True, username__isnull=False, phone_number__isnull=True
+                )
+                | models.Q(
+                    is_staff=False, username__isnull=True, phone_number__isnull=False
+                ),
+                name="user_has_auth_identifier",
+            )
+        ]
 
-    @property
-    def is_doctor(self) -> bool:
-        return self.role == self.RoleChoices.DOCTOR
+    def clean(self) -> None:
+        self.username = self.username or None  # pyright: ignore[reportAttributeAccessIssue]
+        self.phone_number = (
+            utils.normalize_phone_number(self.phone_number)
+            if self.phone_number
+            else None
+        )
+        super().clean()
+
+        if self.is_staff and not self.username:
+            raise ValidationError(
+                {"username": _("Staff and admin users must have a username.")}
+            )
+
+        if not self.is_staff and not self.phone_number:
+            raise ValidationError(
+                {"phone_number": _("Regular users must have a phone number.")}
+            )
+
+    def save(self, *args, **kwargs) -> None:
+        self.username = self.username or None  # pyright: ignore[reportAttributeAccessIssue]
+        self.phone_number = (
+            utils.normalize_phone_number(self.phone_number)
+            if self.phone_number
+            else None
+        )
+        super().save(*args, **kwargs)
+
+    def __str__(self) -> str:
+        identifier = self.username or self.phone_number or f"User #{self.pk or 'new'}"
+        full_name = self.get_full_name().strip()
+
+        if full_name:
+            return f"{identifier} ({full_name})"
+        return identifier
 
 
 class OTP(models.Model):
     class Purpose(models.TextChoices):
         LOGIN = "login", _("Login")
-        EMAIL_VERIFICATION = "email_verification", _("Email Verification")
         PASSWORD_RESET = "password_reset", _("Password Reset")
+
+    class Status(models.TextChoices):
+        PENDING = "pending", _("Pending")
+        VERIFIED = "verified", _("Verified")
+        REVOKED = "revoked", _("Revoked")
 
     phone_number = models.CharField(max_length=11)
     purpose = models.CharField(
         max_length=32, default=Purpose.LOGIN, choices=Purpose.choices
+    )
+    status = models.CharField(
+        max_length=16, default=Status.PENDING, choices=Status.choices, db_index=True
     )
 
     code = models.CharField(max_length=128)
@@ -59,8 +110,7 @@ class OTP(models.Model):
     max_attempts = models.PositiveSmallIntegerField(default=5)
 
     expires_at = models.DateTimeField(db_index=True)
-    is_used = models.BooleanField(default=False)
-    used_at = models.DateTimeField(null=True, blank=True)
+    consumed_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -69,7 +119,7 @@ class OTP(models.Model):
         ordering = ["-created_at"]
         indexes = (
             models.Index(
-                fields=["phone_number", "purpose", "is_used", "expires_at"],
+                fields=["phone_number", "purpose", "status", "expires_at"],
                 name="otp_lookup_idx",
             ),
             models.Index(
@@ -88,13 +138,38 @@ class OTP(models.Model):
         )
 
     def __str__(self) -> str:
-        recipient = self.phone_number
-        status = "Used" if self.is_used else "Active/Unused"
-        return f"OTP [{self.purpose}] for {recipient or 'Unknown'} ({status})"
+        return f"OTP ({self.purpose}) - {self.phone_number} [{self.effective_status}]"
 
     @property
     def is_expired(self) -> bool:
         return self.expires_at <= timezone.now()
+
+    @property
+    def is_exhausted(self) -> bool:
+        return self.attempts_count >= self.max_attempts
+
+    @property
+    def is_usable(self) -> bool:
+        return (
+            self.status == self.Status.PENDING
+            and not self.is_expired
+            and not self.is_exhausted
+        )
+
+    @property
+    def effective_status(self) -> str:
+        if self.status == self.Status.VERIFIED:
+            val = self.Status.VERIFIED.label
+        elif self.status == self.Status.REVOKED:
+            val = self.Status.REVOKED.label
+        elif self.is_exhausted:
+            val = _("Exhausted")
+        elif self.is_expired:
+            val = _("Expired")
+        else:
+            val = self.Status.PENDING.label
+
+        return cast(str, val)
 
     def set_code(self, raw_code: str) -> None:
         self.code = make_password(raw_code)

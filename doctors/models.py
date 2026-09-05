@@ -1,13 +1,7 @@
 from django.conf import settings
-from django.core.validators import RegexValidator
 from django.db import models
-from django.utils.translation import gettext_lazy as _
 
-phone_validator = RegexValidator(
-    regex=r"^0\d{10}$",
-    message=_("Phone number must start with 0 and contain exactly 11 digits."),
-    code="invalid_phone_number",
-)
+from validators import PhoneNumberValidator
 
 
 class Specialty(models.Model):
@@ -20,15 +14,22 @@ class Specialty(models.Model):
         return self.name
 
 
+# TODO: separate practice information into it's own model
 class Doctor(models.Model):
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    account = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        related_name="doctor_profile",
+        on_delete=models.CASCADE,
+    )
     specialties = models.ManyToManyField(Specialty, blank=True, related_name="doctors")
     biography = models.TextField(blank=True)
-    clinic_address = models.TextField()
-    clinic_phone_number = models.CharField(max_length=11, validators=[phone_validator])
+    practice_address = models.TextField()
+    practice_phone_number = models.CharField(
+        max_length=11, validators=[PhoneNumberValidator()]
+    )
     visit_fee = models.PositiveBigIntegerField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self) -> str:
-        return f"Dr. {self.user.get_full_name()}"
+        return f"Dr. {self.account.get_full_name()}"

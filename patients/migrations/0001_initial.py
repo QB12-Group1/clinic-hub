@@ -15,7 +15,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name="Wallet",
+            name="Patient",
             fields=[
                 (
                     "id",
@@ -26,12 +26,13 @@ class Migration(migrations.Migration):
                         verbose_name="ID",
                     ),
                 ),
-                ("balance", models.PositiveBigIntegerField(default=0)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
                 (
                     "account",
                     models.OneToOneField(
                         on_delete=django.db.models.deletion.CASCADE,
-                        related_name="wallet",
+                        related_name="patient_profile",
                         to=settings.AUTH_USER_MODEL,
                     ),
                 ),
