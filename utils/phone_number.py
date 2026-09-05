@@ -8,6 +8,6 @@ def normalize_phone_number(phone_number: str) -> str:
     elif phone_number.startswith("98") and len(phone_number) == 12:
         phone_number = "0" + phone_number[2:]
     elif phone_number.startswith("9") and len(phone_number) == 10:
-        phone_number = "0" + phone_number[1:]
+        phone_number = "0" + phone_number
 
     return phone_number
