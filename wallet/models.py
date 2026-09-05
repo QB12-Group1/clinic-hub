@@ -4,11 +4,15 @@ from django.utils.translation import gettext_lazy as _
 
 
 class Wallet(models.Model):
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    account = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        related_name="wallet",
+        on_delete=models.CASCADE,
+    )
     balance = models.PositiveBigIntegerField(default=0)
 
     def __str__(self) -> str:
-        return f"{self.user.username} ({self.balance})"
+        return f"{self.account.username} ({self.balance})"
 
 
 class Transaction(models.Model):
@@ -18,9 +22,14 @@ class Transaction(models.Model):
         PAYMENT = "payment", _("Payment")
 
     wallet = models.ForeignKey(
-        Wallet, related_name="transactions", on_delete=models.CASCADE
+        Wallet,
+        related_name="transactions",
+        on_delete=models.CASCADE,
     )
-    type = models.CharField(max_length=15, choices=TransactionType.choices)
+    type = models.CharField(
+        max_length=15,
+        choices=TransactionType.choices,
+    )
     amount = models.PositiveBigIntegerField()
     created_at = models.DateTimeField(auto_now_add=True)
 
