@@ -3,10 +3,10 @@ from django.db import models
 
 
 class Wallet(models.Model):
-    user = models.OneToOneField(
+    account = models.OneToOneField(
         settings.AUTH_USER_MODEL, related_name="wallet", on_delete=models.CASCADE
     )
     balance = models.PositiveBigIntegerField(default=0)
 
     def __str__(self) -> str:
-        return f"{self.user.username} ({self.balance})"
+        return f"{self.account.username} ({self.balance})"

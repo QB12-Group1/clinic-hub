@@ -16,7 +16,7 @@ class Specialty(models.Model):
 
 # TODO: separate practice information into it's own model
 class Doctor(models.Model):
-    user = models.OneToOneField(
+    account = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         related_name="doctor_profile",
         on_delete=models.CASCADE,
@@ -32,4 +32,4 @@ class Doctor(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self) -> str:
-        return f"Dr. {self.user.get_full_name()}"
+        return f"Dr. {self.account.get_full_name()}"

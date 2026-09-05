@@ -5,7 +5,7 @@ from core import settings
 
 # TODO: we should support gender and national id later
 class Patient(models.Model):
-    user = models.OneToOneField(
+    account = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         related_name="patient_profile",
         on_delete=models.CASCADE,
@@ -15,4 +15,4 @@ class Patient(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self) -> str:
-        return f"Patient: {self.user}"
+        return f"Patient: {self.account}"
