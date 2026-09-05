@@ -13,11 +13,14 @@ class Wallet(models.Model):
 
 class Transaction(models.Model):
     class TransactionType(models.TextChoices):
-        CREDIT = "credit", _("Credit")
-        DEBIT = "debit", _("Debit")
+        DEPOSIT = "deposit", _("Deposit")
+        WITHDRAWAL = "withdrawal", _("Withdrawal")
+        PAYMENT = "payment", _("Payment")
 
-    wallet = models.ForeignKey(Wallet, on_delete=models.CASCADE)
-    type = models.CharField(max_length=10, choices=TransactionType.choices)
+    wallet = models.ForeignKey(
+        Wallet, related_name="transactions", on_delete=models.CASCADE
+    )
+    type = models.CharField(max_length=15, choices=TransactionType.choices)
     amount = models.PositiveBigIntegerField()
     created_at = models.DateTimeField(auto_now_add=True)
 
