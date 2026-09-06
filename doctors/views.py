@@ -1,3 +1,18 @@
-from django.shortcuts import render
+from django.db.models import QuerySet
+from django.views.generic.list import ListView
 
-# Create your views here.
+from doctors.models import Doctor
+
+
+class DoctorListView(ListView):
+    model = Doctor
+    template_name = ""
+    context_object_name = "doctors"
+
+    def get_queryset(self) -> QuerySet[Doctor]:
+        queryset = (
+            Doctor.objects.filter(account__is_active=True)
+            .select_related("account")
+            .prefetch_related("specialties")
+        )
+        return queryset
