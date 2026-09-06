@@ -1,0 +1,54 @@
+{% extends "layouts/auth.html" %}
+{% block title %}Create account · Clinic Hub{% endblock %}
+{% block auth_hero_title %}Join thousands managing their care in one place.{% endblock %}
+{% block auth_hero_subtitle %}Create your account in under a minute. We'll text you a one-time code to confirm it's really you.{% endblock %}
+{% block auth_content %}
+<div class="eyebrow">Get started</div>
+<h1 class="mt-1 text-2xl font-extrabold tracking-tight">Create your account</h1>
+<p class="mt-2 text-sm text-slate-500">Fill in your details below. You'll verify your phone number with an SMS code next.</p>
+
+<form method="post" class="mt-8 space-y-5">
+  {% csrf_token %}
+  <div class="grid grid-cols-2 gap-4">
+    <div class="rounded-xl border border-transparent p-1 transition focus-within:border-primary/10">
+      <label class="field-label" for="id_first_name">First name</label>
+      <input id="id_first_name" name="first_name" type="text" class="field-control" placeholder="Mina" required autocomplete="given-name">
+    </div>
+    <div class="rounded-xl border border-transparent p-1 transition focus-within:border-primary/10">
+      <label class="field-label" for="id_last_name">Last name</label>
+      <input id="id_last_name" name="last_name" type="text" class="field-control" placeholder="Rahimi" required autocomplete="family-name">
+    </div>
+  </div>
+
+  <div class="rounded-xl border border-transparent p-1 transition focus-within:border-primary/10">
+    <label class="field-label" for="id_phone_number">Phone number</label>
+    <div class="relative">
+      <i data-lucide="smartphone" class="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-slate-400"></i>
+      <input id="id_phone_number" name="phone_number" type="tel" inputmode="numeric" class="field-control pl-11" placeholder="09123456789" required autocomplete="tel">
+    </div>
+    <p class="mt-2 flex items-start gap-1.5 text-xs leading-5 text-slate-400"><i data-lucide="info" class="mt-0.5 size-3.5 shrink-0"></i>We'll send a verification code to this number.</p>
+  </div>
+
+  <div class="rounded-xl border border-transparent p-1 transition focus-within:border-primary/10">
+    <label class="field-label" for="id_email">Email address</label>
+    <div class="relative">
+      <i data-lucide="mail" class="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-slate-400"></i>
+      <input id="id_email" name="email" type="email" class="field-control pl-11" placeholder="mina@example.com" required autocomplete="email">
+    </div>
+  </div>
+
+  <label class="flex items-start gap-2.5 text-xs leading-5 text-slate-500">
+    <input type="checkbox" class="checkbox checkbox-primary checkbox-sm mt-0.5" required>
+    I agree to the <a href="#" class="font-semibold text-primary hover:underline">Terms of Service</a> and <a href="#" class="font-semibold text-primary hover:underline">Privacy Policy</a>.
+  </label>
+
+  <button type="submit" class="btn btn-primary btn-block min-h-12">
+    Continue<i data-lucide="arrow-right" class="ml-1 size-4"></i>
+  </button>
+</form>
+
+<p class="mt-6 text-center text-sm text-slate-500">
+  Already have an account?
+  <a href="#" class="font-semibold text-primary hover:underline">Log in</a>
+</p>
+{% endblock %}

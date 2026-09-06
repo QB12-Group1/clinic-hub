@@ -19,10 +19,14 @@ from django.contrib import admin
 from django.urls import path
 
 from core.cbv_views import (
+    LoginShowcaseView,
+    LogoutShowcaseView,
     PatientDeleteView,
     PatientDetailView,
     PatientFormView,
     PatientListView,
+    SignupShowcaseView,
+    VerifyOTPShowcaseView,
 )
 from core.views import (
     dashboard,
@@ -75,6 +79,26 @@ urlpatterns = [
         "ui/examples-cbv/patients/<int:patient_id>/delete/",
         PatientDeleteView.as_view(),
         name="cbv-patient-delete",
+    ),
+    path(
+        "ui/examples-cbv/auth/signup/",
+        SignupShowcaseView.as_view(),
+        name="cbv-auth-signup",
+    ),
+    path(
+        "ui/examples-cbv/auth/login/",
+        LoginShowcaseView.as_view(),
+        name="cbv-auth-login",
+    ),
+    path(
+        "ui/examples-cbv/auth/verify-otp/",
+        VerifyOTPShowcaseView.as_view(),
+        name="cbv-auth-verify-otp",
+    ),
+    path(
+        "ui/examples-cbv/auth/logout/",
+        LogoutShowcaseView.as_view(),
+        name="cbv-auth-logout",
     ),
     path("admin/", admin.site.urls),
 ]

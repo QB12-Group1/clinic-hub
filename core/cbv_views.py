@@ -26,7 +26,7 @@ from django.core.exceptions import ImproperlyConfigured
 from django.shortcuts import redirect
 from django.urls import reverse, reverse_lazy
 from django.views import View
-from django.views.generic import DetailView, ListView
+from django.views.generic import DetailView, ListView, TemplateView
 from django.views.generic.edit import FormView
 
 from core.forms import PatientExampleForm
@@ -175,3 +175,29 @@ class PatientDeleteView(View):
         EXAMPLE_PATIENTS[:] = [item for item in EXAMPLE_PATIENTS if item["id"] != patient_id]
         messages.success(request, "Example patient deleted.")
         return redirect("cbv-patient-list")
+
+
+class SignupShowcaseView(TemplateView):
+    """Pure UI showcase for the signup page. Not wired to any real
+    registration logic; it's here purely so the template can be reviewed
+    at /ui/examples-cbv/auth/signup/."""
+
+    template_name = "account/signup.html"
+
+
+class LoginShowcaseView(TemplateView):
+    """Pure UI showcase for the login page. See SignupShowcaseView."""
+
+    template_name = "account/login.html"
+
+
+class VerifyOTPShowcaseView(TemplateView):
+    """Pure UI showcase for the OTP verification page. See SignupShowcaseView."""
+
+    template_name = "account/verify_otp.html"
+
+
+class LogoutShowcaseView(TemplateView):
+    """Pure UI showcase for the logout confirmation page. See SignupShowcaseView."""
+
+    template_name = "account/logout.html"

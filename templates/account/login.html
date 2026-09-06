@@ -1,0 +1,37 @@
+{% extends "layouts/auth.html" %}
+{% block title %}Log in · Clinic Hub{% endblock %}
+{% block auth_hero_title %}Welcome back to your care team.{% endblock %}
+{% block auth_hero_subtitle %}Log in with your phone number, we'll send you a one-time code, no password to remember.{% endblock %}
+{% block auth_content %}
+<div class="eyebrow">Welcome back</div>
+<h1 class="mt-1 text-2xl font-extrabold tracking-tight">Log in to Clinic Hub</h1>
+<p class="mt-2 text-sm text-slate-500">Enter your phone number and we'll text you a verification code.</p>
+
+<form method="post" class="mt-8 space-y-5">
+  {% csrf_token %}
+  <div class="rounded-xl border border-transparent p-1 transition focus-within:border-primary/10">
+    <label class="field-label" for="id_phone_number">Phone number</label>
+    <div class="relative">
+      <i data-lucide="smartphone" class="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-slate-400"></i>
+      <input id="id_phone_number" name="phone_number" type="tel" inputmode="numeric" class="field-control pl-11" placeholder="09123456789" required autocomplete="tel" autofocus>
+    </div>
+  </div>
+
+  <button type="submit" class="btn btn-primary btn-block min-h-12">
+    Send verification code<i data-lucide="arrow-right" class="ml-1 size-4"></i>
+  </button>
+</form>
+
+<div class="my-6 flex items-center gap-3 text-xs font-semibold uppercase tracking-wide text-slate-300">
+  <div class="h-px flex-1 bg-slate-100"></div>or<div class="h-px flex-1 bg-slate-100"></div>
+</div>
+
+<a href="#" class="btn btn-outline btn-block min-h-12 border-slate-200 text-slate-600 hover:bg-slate-50">
+  <i data-lucide="shield" class="mr-1 size-4"></i>Staff / admin login
+</a>
+
+<p class="mt-6 text-center text-sm text-slate-500">
+  New to Clinic Hub?
+  <a href="#" class="font-semibold text-primary hover:underline">Create an account</a>
+</p>
+{% endblock %}
