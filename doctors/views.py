@@ -6,7 +6,7 @@ from doctors.models import Doctor
 
 class DoctorListView(ListView):
     model = Doctor
-    template_name = ""
+    template_name = "doctors/doctor_list.html"
     context_object_name = "doctors"
 
     def get_queryset(self) -> QuerySet[Doctor]:
@@ -15,4 +15,4 @@ class DoctorListView(ListView):
             .select_related("account")
             .prefetch_related("specialties")
         )
-        return queryset
+        return queryset.distinct()
