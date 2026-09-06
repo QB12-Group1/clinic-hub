@@ -27,6 +27,6 @@ class TimeSlot(models.Model):
     def __str__(self) -> str:
         status = "Booked" if self.is_booked else "Available"
         return (
-            f"Dr. {self.doctor.account.get_full_name()} -"
+            f"{self.doctor} -"
             f"{self.start_time:%Y-%m-%d %H:%M} ({status})"
         )
