@@ -18,8 +18,15 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
+from core.cbv_views import (
+    PatientDeleteView,
+    PatientDetailView,
+    PatientFormView,
+    PatientListView,
+)
 from core.views import (
     dashboard,
+    patient_example_delete,
     patient_example_detail,
     patient_example_form,
     patient_examples,
@@ -28,9 +35,7 @@ from core.views import (
 urlpatterns = [
     path("", dashboard, name="dashboard"),
     path("ui/examples/patients/", patient_examples, name="patient-examples"),
-    path(
-        "ui/examples/patients/new/", patient_example_form, name="patient-example-create"
-    ),
+    path("ui/examples/patients/new/", patient_example_form, name="patient-example-create"),
     path(
         "ui/examples/patients/<int:patient_id>/",
         patient_example_detail,
@@ -40,6 +45,36 @@ urlpatterns = [
         "ui/examples/patients/<int:patient_id>/edit/",
         patient_example_form,
         name="patient-example-edit",
+    ),
+    path(
+        "ui/examples/patients/<int:patient_id>/delete/",
+        patient_example_delete,
+        name="patient-example-delete",
+    ),
+    path(
+        "ui/examples-cbv/patients/",
+        PatientListView.as_view(),
+        name="cbv-patient-list",
+    ),
+    path(
+        "ui/examples-cbv/patients/new/",
+        PatientFormView.as_view(),
+        name="cbv-patient-create",
+    ),
+    path(
+        "ui/examples-cbv/patients/<int:patient_id>/",
+        PatientDetailView.as_view(),
+        name="cbv-patient-detail",
+    ),
+    path(
+        "ui/examples-cbv/patients/<int:patient_id>/edit/",
+        PatientFormView.as_view(),
+        name="cbv-patient-edit",
+    ),
+    path(
+        "ui/examples-cbv/patients/<int:patient_id>/delete/",
+        PatientDeleteView.as_view(),
+        name="cbv-patient-delete",
     ),
     path("admin/", admin.site.urls),
 ]

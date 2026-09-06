@@ -142,16 +142,13 @@ def patient_examples(request):
     query = request.GET.get("q", "").strip().lower()
     patients = EXAMPLE_PATIENTS
     if query:
-        patients = [
-            patient
-            for patient in patients
-            if query in patient["name"].lower() or query in patient["phone"]
-        ]
+        patients = [patient for patient in patients if query in patient["name"].lower() or query in patient["phone"]]
     rows = [
         {
             **patient,
             "detail_url": f"/ui/examples/patients/{patient['id']}/",
             "edit_url": f"/ui/examples/patients/{patient['id']}/edit/",
+            "delete_url": f"/ui/examples/patients/{patient['id']}/delete/",
         }
         for patient in patients
     ]
@@ -163,8 +160,7 @@ def patient_examples(request):
             "page_title": "Patients",
             "nav_active": "patients",
             "eyebrow": "Reusable list example",
-            "page_description": "A generic table, filter, empty state, "
-            "pagination, and row actions.",
+            "page_description": "A generic table, filter, empty state, pagination, and row actions.",
             "primary_action": {
                 "label": "Add patient",
                 "url": "/ui/examples/patients/new/",
@@ -191,9 +187,7 @@ def patient_examples(request):
 
 
 def patient_example_form(request, patient_id=None):
-    patient = next(
-        (item for item in EXAMPLE_PATIENTS if item["id"] == patient_id), None
-    )
+    patient = next((item for item in EXAMPLE_PATIENTS if item["id"] == patient_id), None)
     initial = {}
     if patient:
         first_name, _, last_name = patient["name"].partition(" ")
@@ -207,8 +201,7 @@ def patient_example_form(request, patient_id=None):
     if request.method == "POST" and form.is_valid():
         messages.success(
             request,
-            "Example form validated successfully. "
-            "Connect it to your model's save() next.",
+            "Example form validated successfully. Connect it to your model's save() next.",
         )
         return redirect("patient-examples")
     return render(
@@ -218,8 +211,7 @@ def patient_example_form(request, patient_id=None):
             "page_title": "Edit patient" if patient else "Add patient",
             "nav_active": "patients",
             "eyebrow": "Reusable form example",
-            "page_description": "The same template works with any "
-            "Django Form or ModelForm.",
+            "page_description": "The same template works with any Django Form or ModelForm.",
             "form": form,
             "submit_label": "Save patient",
             "cancel_url": "/ui/examples/patients/",
@@ -246,5 +238,13 @@ def patient_example_detail(request, patient_id):
             ],
             "back_url": "/ui/examples/patients/",
             "edit_url": f"/ui/examples/patients/{patient['id']}/edit/",
+            "delete_url": f"/ui/examples/patients/{patient['id']}/delete/",
         },
     )
+
+
+def patient_example_delete(request, patient_id):
+    if request.method == "POST":
+        EXAMPLE_PATIENTS[:] = [item for item in EXAMPLE_PATIENTS if item["id"] != patient_id]
+        messages.success(request, "Example patient deleted.")
+    return redirect("patient-examples")
