@@ -18,9 +18,28 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
-from core.views import dashboard
+from core.views import (
+    dashboard,
+    patient_example_detail,
+    patient_example_form,
+    patient_examples,
+)
 
 urlpatterns = [
     path("", dashboard, name="dashboard"),
+    path("ui/examples/patients/", patient_examples, name="patient-examples"),
+    path(
+        "ui/examples/patients/new/", patient_example_form, name="patient-example-create"
+    ),
+    path(
+        "ui/examples/patients/<int:patient_id>/",
+        patient_example_detail,
+        name="patient-example-detail",
+    ),
+    path(
+        "ui/examples/patients/<int:patient_id>/edit/",
+        patient_example_form,
+        name="patient-example-edit",
+    ),
     path("admin/", admin.site.urls),
 ]

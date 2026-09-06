@@ -1,0 +1,11 @@
+{% extends "layouts/page.html" %}
+{% load ui %}
+{% block title %}{{ page_title }} · Clinic Hub{% endblock %}
+{% block page_content %}
+{% if filters %}{% include "components/filters.html" %}{% endif %}
+<section class="surface mt-5 overflow-hidden">
+  <div class="overflow-x-auto"><table class="table"><thead><tr>{% for column in columns %}<th>{{ column.label }}</th>{% endfor %}<th class="text-right">Actions</th></tr></thead><tbody>
+    {% for row in rows %}<tr class="hover">{% for column in columns %}<td>{% with value=row|get_item:column.key %}{{ value|default:'—' }}{% endwith %}</td>{% endfor %}<td><div class="flex justify-end gap-1"><a class="btn btn-ghost btn-xs" href="{{ row.detail_url }}">View</a><a class="btn btn-ghost btn-xs" href="{{ row.edit_url }}">Edit</a></div></td></tr>{% empty %}<tr><td colspan="{{ columns|length|add:1 }}" class="p-0">{% include "components/empty_state.html" with icon="inbox" title=empty_title description=empty_description action_label=empty_action_label %}</td></tr>{% endfor %}
+  </tbody></table></div><div class="p-4">{% include "components/pagination.html" %}</div>
+</section>
+{% endblock %}

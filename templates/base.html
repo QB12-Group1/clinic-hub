@@ -9,6 +9,7 @@
     <script defer src="{% static 'dist/app.js' %}"></script>
   </head>
   <body>
+    {% if messages %}{% include "components/toasts.html" %}{% endif %}
     {% block content %}{% endblock %}
   </body>
 </html>

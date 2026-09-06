@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<div x-data="{ sidebar: false }" class="min-h-screen lg:flex">
+  <div x-show="sidebar" x-transition.opacity class="fixed inset-0 z-30 bg-slate-950/40 lg:hidden" @click="sidebar=false"></div>
+  <aside :class="sidebar ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'" class="fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-slate-200 bg-white px-5 py-6 transition-transform lg:static">
+    <div class="flex items-center gap-3 px-2"><div class="grid size-10 place-items-center rounded-xl bg-primary text-white"><i data-lucide="activity" class="size-5"></i></div><div><div class="font-extrabold tracking-tight">Clinic Hub</div><div class="text-xs text-slate-400">Care, connected.</div></div></div>
+    <nav class="mt-10 space-y-1 text-sm font-semibold">
+      <a class="flex items-center gap-3 rounded-xl px-3 py-3 {% if nav_active == 'overview' %}bg-primary/10 text-primary{% else %}text-slate-500 hover:bg-slate-100{% endif %}" href="/"><i data-lucide="layout-dashboard" class="size-4"></i>Overview</a>
+      <a class="flex items-center gap-3 rounded-xl px-3 py-3 {% if nav_active == 'appointments' %}bg-primary/10 text-primary{% else %}text-slate-500 hover:bg-slate-100{% endif %}" href="/#appointments"><i data-lucide="calendar-days" class="size-4"></i>Appointments<span class="badge badge-sm ml-auto">8</span></a>
+      <a class="flex items-center gap-3 rounded-xl px-3 py-3 {% if nav_active == 'patients' %}bg-primary/10 text-primary{% else %}text-slate-500 hover:bg-slate-100{% endif %}" href="/ui/examples/patients/"><i data-lucide="users" class="size-4"></i>Patients</a>
+      <a class="flex items-center gap-3 rounded-xl px-3 py-3 {% if nav_active == 'doctors' %}bg-primary/10 text-primary{% else %}text-slate-500 hover:bg-slate-100{% endif %}" href="/#appointments"><i data-lucide="stethoscope" class="size-4"></i>Doctors</a>
+      <a class="flex items-center gap-3 rounded-xl px-3 py-3 {% if nav_active == 'billing' %}bg-primary/10 text-primary{% else %}text-slate-500 hover:bg-slate-100{% endif %}" href="#"><i data-lucide="wallet-cards" class="size-4"></i>Billing</a>
+    </nav>
+    <div class="mt-auto rounded-2xl bg-slate-900 p-4 text-white"><div class="mb-3 flex items-center justify-between"><span class="text-sm font-semibold">Need a hand?</span><i data-lucide="sparkles" class="size-4 text-amber-300"></i></div><p class="text-xs leading-5 text-slate-300">Invite your team and keep every appointment in sync.</p><button class="btn btn-sm mt-4 w-full border-0 bg-white/10 text-white hover:bg-white/20">Invite team</button></div>
+  </aside>
+  <main class="w-full flex-1 px-4 py-5 sm:px-8 lg:px-10">
+    <header class="flex items-center justify-between"><button class="btn btn-ghost btn-square lg:hidden" @click="sidebar=true"><i data-lucide="menu"></i></button>{% block header_content %}<div class="hidden lg:block"></div>{% endblock %}<div class="flex items-center gap-2"><button class="btn btn-ghost btn-square"><i data-lucide="bell" class="size-5"></i></button><div class="avatar placeholder"><div class="w-10 rounded-full bg-primary text-white"><span>AS</span></div></div></div></header>
+    {% block shell_content %}{% endblock %}
+  </main>
+</div>
+{% endblock %}

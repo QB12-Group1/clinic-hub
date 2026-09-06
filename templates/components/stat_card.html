@@ -1,0 +1,8 @@
+<article class="surface p-5">
+  <div class="flex items-start justify-between">
+    <div class="rounded-xl bg-{{ stat.tone }}/10 p-2.5 text-{{ stat.tone }}"><i data-lucide="{{ stat.icon }}" class="size-5"></i></div>
+    {% if stat.change %}<span class="text-xs font-bold text-emerald-500">{{ stat.change }}</span>{% endif %}
+  </div>
+  <div class="mt-5 text-3xl font-extrabold">{{ stat.value }}</div>
+  <div class="mt-1 text-sm text-slate-500">{{ stat.label }}</div>
+</article>
