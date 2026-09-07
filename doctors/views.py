@@ -6,7 +6,7 @@ from doctors.models import Doctor
 
 class DoctorListView(ListView):
     model = Doctor
-    template_name = "doctors/doctor_list.html"
+    template_name = "pages/list.html"
     context_object_name = "doctors"
     paginate_by = 10
 
