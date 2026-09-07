@@ -8,6 +8,7 @@ class DoctorListView(ListView):
     model = Doctor
     template_name = "doctors/doctor_list.html"
     context_object_name = "doctors"
+    paginate_by = 10
 
     def get_queryset(self) -> QuerySet[Doctor]:
         queryset = (
