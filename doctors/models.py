@@ -24,9 +24,7 @@ class Doctor(models.Model):
     specialties = models.ManyToManyField(Specialty, blank=True, related_name="doctors")
     biography = models.TextField(blank=True)
     practice_address = models.TextField()
-    practice_phone_number = models.CharField(
-        max_length=11, validators=[PhoneNumberValidator()]
-    )
+    practice_phone_number = models.CharField(max_length=11, validators=[PhoneNumberValidator()])
     visit_fee = models.PositiveBigIntegerField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

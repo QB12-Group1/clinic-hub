@@ -12,9 +12,7 @@ class UserManager(BaseUserManager):
         **extra_fields,
     ):
         username = self.model.normalize_username(username) if username else None
-        phone_number = (
-            utils.normalize_phone_number(phone_number) if phone_number else None
-        )
+        phone_number = utils.normalize_phone_number(phone_number) if phone_number else None
         user = self.model(username=username, phone_number=phone_number, **extra_fields)
         user.set_password(password)
         user.save(using=self.db)

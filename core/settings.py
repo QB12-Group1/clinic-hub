@@ -120,9 +120,7 @@ AUTHENTICATION_BACKENDS = [
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        "NAME": (
-            "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"
-        ),
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
     },
     {
         "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
@@ -177,17 +175,19 @@ if env.bool("DJANGO_EMAIL_USE_SMTP", default=False):
     MAILERS = {
         "default": {
             "BACKEND": "django.core.mail.backends.smtp.EmailBackend",
-            "HOST": env("EMAIL_HOST"),
-            "PORT": env.int("EMAIL_PORT", default=587),
-            "USERNAME": env.str("EMAIL_HOST_USER", default=""),
-            "PASSWORD": env.str("EMAIL_HOST_PASSWORD", default=""),
-            "USE_TLS": env.bool("EMAIL_USE_TLS", default=True),
+            "OPTIONS": {
+                "host": env("EMAIL_HOST"),
+                "port": env.int("EMAIL_PORT", default=587),
+                "username": env.str("EMAIL_HOST_USER", default=""),
+                "password": env.str("EMAIL_HOST_PASSWORD", default=""),
+                "use_tls": env.bool("EMAIL_USE_TLS", default=True),
+            },
         },
     }
 else:
     MAILERS = {
         "default": {
-            "BACKEND": "django.core.mail.backends.console.EmailBackend",
+            "backend": "django.core.mail.backends.console.EmailBackend",
         },
     }
 
