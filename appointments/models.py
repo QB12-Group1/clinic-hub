@@ -2,9 +2,7 @@ from django.db import models
 
 
 class TimeSlot(models.Model):
-    doctor = models.ForeignKey(
-        "doctors.Doctor", related_name="time_slots", on_delete=models.CASCADE
-    )
+    doctor = models.ForeignKey("doctors.Doctor", related_name="time_slots", on_delete=models.CASCADE)
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
     is_booked = models.BooleanField(default=False)
@@ -26,7 +24,4 @@ class TimeSlot(models.Model):
 
     def __str__(self) -> str:
         status = "Booked" if self.is_booked else "Available"
-        return (
-            f"{self.doctor} -"
-            f"{self.start_time:%Y-%m-%d %H:%M} ({status})"
-        )
+        return f"{self.doctor} -{self.start_time:%Y-%m-%d %H:%M} ({status})"
