@@ -1,7 +1,18 @@
+x-app-common: &app-common
+  image: clinic-hub-app:latest
+  build:
+    context: .
+    dockerfile: Dockerfile
+  env_file:
+    - .env
+  restart: unless-stopped
+
 services:
   db:
     image: postgres:17-alpine
     restart: unless-stopped
+    networks:
+      - app-backend
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-clinic_hub}
       POSTGRES_USER: ${POSTGRES_USER:-clinic_hub}
@@ -13,10 +24,13 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+      start_period: 10s
 
   redis:
     image: redis:7-alpine
     restart: unless-stopped
+    networks:
+      - app-backend
     volumes:
       - redis_data:/data
     healthcheck:
@@ -24,12 +38,10 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+      start_period: 10s
 
   web:
-    build: .
-    restart: unless-stopped
-    env_file:
-      - .env
+    <<: *app-common
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-clinic_hub}:${POSTGRES_PASSWORD:-clinic_hub}@db:5432/${POSTGRES_DB:-clinic_hub}
       CACHE_URL: redis://redis:6379/1
@@ -42,14 +54,19 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    networks:
+      - app-backend
     expose:
       - "8000"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import socket; socket.create_connection(('127.0.0.1', 8000), timeout=2).close()\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
   celery_worker:
-    build: .
-    restart: unless-stopped
-    env_file:
-      - .env
+    <<: *app-common
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-clinic_hub}:${POSTGRES_PASSWORD:-clinic_hub}@db:5432/${POSTGRES_DB:-clinic_hub}
       CACHE_URL: redis://redis:6379/1
@@ -60,12 +77,11 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    networks:
+      - app-backend
 
   flower:
-    build: .
-    restart: unless-stopped
-    env_file:
-      - .env
+    <<: *app-common
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-clinic_hub}:${POSTGRES_PASSWORD:-clinic_hub}@db:5432/${POSTGRES_DB:-clinic_hub}
       CACHE_URL: redis://redis:6379/1
@@ -74,23 +90,37 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+    networks:
+      - app-backend
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import socket; socket.create_connection(('127.0.0.1', 5555), timeout=2).close()\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     ports:
-      - "5555:5555"
+      - "127.0.0.1:5555:5555"
 
   nginx:
     image: nginx:1.27-alpine
     restart: unless-stopped
     ports:
       - "80:80"
+    networks:
+      - app-backend
     volumes:
       - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
       - static_data:/app/staticfiles:ro
       - media_data:/app/media:ro
     depends_on:
-      - web
+      web:
+        condition: service_healthy
 
 volumes:
   postgres_data:
   redis_data:
   static_data:
   media_data:
+
+networks:
+  app-backend:

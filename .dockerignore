@@ -7,6 +7,11 @@ __pycache__
 .env
 .env.*
 !.env.example
+node_modules
+/dist
+/build
+coverage
+*.log
 db.sqlite3
 staticfiles
 media
