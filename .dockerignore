@@ -1,16 +1,60 @@
-.venv
-__pycache__
-*.pyc
-*.pyo
-.git
+# Git
+.git/
 .gitignore
+
+# Secrets and local environment
 .env
 .env.*
 !.env.example
-db.sqlite3
-staticfiles
-media
-.ruff_cache
-.pytest_cache
-.pyright
-*.md
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Python tooling and test output
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/
+.pyright/
+.coverage
+.coverage.*
+htmlcov/
+
+# uv cache
+.uv_cache/
+.uv-cache/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.parcel-cache/
+.turbo/
+
+# Django-generated/runtime data
+staticfiles/
+media/
+
+# Local databases and Redis data
+*.sqlite3
+*.db
+dump.rdb
+
+# Editors and OS files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Local logs and temporary files
+*.log
+tmp/
+temp/

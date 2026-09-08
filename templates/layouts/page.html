@@ -1,0 +1,15 @@
+{% extends "layouts/shell.html" %}
+{% block header_content %}
+    <div class="hidden lg:flex items-center gap-2 text-sm font-semibold text-slate-500">
+        <a href="/" class="hover:text-primary">Overview</a>
+        <i data-lucide="chevron-right" class="size-3.5 text-slate-300"></i>
+        <span class="text-slate-800">{{ page_title }}</span>
+    </div>
+{% endblock %}
+{% block shell_content %}
+    <div class="mt-6">
+        <a href="/" class="btn btn-ghost btn-sm mb-3 -ml-3"><i data-lucide="arrow-left" class="mr-1 size-4"></i>Dashboard</a>
+        {% include "components/page_header.html" %}
+        {% block page_content %}{% endblock %}
+    </div>
+{% endblock %}

@@ -16,6 +16,15 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
 WORKDIR /app
 
+FROM node:22-alpine AS assets
+WORKDIR /app
+COPY package.json ./
+RUN npm install
+COPY frontend ./frontend
+COPY templates ./templates
+COPY tailwind.config.js postcss.config.js ./
+RUN npm run build
+
 FROM base AS build
 RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential \
@@ -26,6 +35,7 @@ COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-install-project --no-dev
 
 COPY . .
+COPY --from=assets /app/static/dist ./static/dist
 RUN uv sync --frozen --no-dev
 
 FROM base AS runtime

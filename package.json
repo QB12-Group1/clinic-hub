@@ -1,0 +1,28 @@
+{
+  "name": "clinic-hub-frontend",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently \"npm:watch:css\" \"npm:watch:js\"",
+    "watch:css": "tailwindcss -i ./frontend/src/input.css -o ./static/dist/app.css --watch",
+    "watch:js": "esbuild frontend/src/app.js --bundle --sourcemap --outfile=static/dist/app.js --watch",
+    "build": "npm run build:css && npm run build:js",
+    "build:css": "tailwindcss -i ./frontend/src/input.css -o ./static/dist/app.css --minify",
+    "build:js": "esbuild frontend/src/app.js --bundle --minify --sourcemap --outfile=static/dist/app.js"
+  },
+  "dependencies": {
+    "@alpinejs/focus": "3.14.9",
+    "alpinejs": "3.14.9",
+    "htmx.org": "2.0.4",
+    "lucide": "0.468.0"
+  },
+  "devDependencies": {
+    "autoprefixer": "10.4.20",
+    "concurrently": "9.1.0",
+    "daisyui": "4.12.14",
+    "esbuild": "0.24.0",
+    "postcss": "8.4.49",
+    "tailwindcss": "3.4.16"
+  }
+}

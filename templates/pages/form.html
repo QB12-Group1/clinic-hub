@@ -1,0 +1,15 @@
+{% extends "layouts/page.html" %}
+{% block title %}{{ page_title }} · Clinic Hub{% endblock %}
+{% block page_content %}
+    <section class="surface max-w-3xl p-6 sm:p-8">
+        <form method="post" enctype="multipart/form-data" class="space-y-5">
+            {% csrf_token %}{% if form.non_field_errors %}
+                <div class="alert alert-error">{{ form.non_field_errors }}</div>{% endif %}{% for field in form %}
+                {% include "components/form_field.html" %}{% endfor %}
+            <div class="flex flex-wrap justify-end gap-2 border-t border-slate-100 pt-5"><a class="btn btn-ghost"
+                                                                                            href="{{ cancel_url|default:'javascript:history.back()' }}">Cancel</a>
+                <button class="btn btn-primary" type="submit">{{ submit_label|default:'Save' }}</button>
+            </div>
+        </form>
+    </section>
+{% endblock %}
