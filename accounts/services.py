@@ -1,16 +1,17 @@
-import os
 import string
 from datetime import timedelta
 
+from django.contrib.auth.models import BaseUserManager
 from django.core.cache import cache
 from django.db import transaction
 from django.utils import timezone
 from django.utils.crypto import get_random_string
 from django.utils.translation import gettext as _
 from django.utils.translation import ngettext
-from kavenegar import KavenegarAPI
 
+import utils
 from accounts.models import OTP
+from core.tasks import send_email_task, send_sms_task
 
 
 class OTPServiceError(Exception):
@@ -29,23 +30,75 @@ class OTPService:
     ALLOWED_CHARS = string.digits
 
     @classmethod
+    def _check_params(cls, kwargs: dict) -> dict[str, str | None | OTP.Purpose]:
+        purpose = kwargs.get("purpose")
+        email = kwargs.get("email")
+        phone_number = kwargs.get("phone_number")
+
+        if not purpose:
+            raise ValueError("Missing required parameter: 'purpose'.")
+
+        has_email, has_phone_number = bool(email), bool(phone_number)
+        if not (has_email ^ has_phone_number):
+            raise ValueError("Exactly one of 'email' or 'phone_number' must be provided.")
+
+        kwargs["email"] = BaseUserManager.normalize_email(email) if email else None
+        kwargs["phone_number"] = utils.normalize_phone_number(phone_number) if phone_number else None
+        return kwargs
+
+    @classmethod
+    def _rate_limit_user(cls, **kwargs) -> None:
+        is_allowed, remaining_seconds = cls.can_request_otp(**kwargs)
+        if not is_allowed:
+            raise OTPRateLimitError(f"Please wait {remaining_seconds} seconds before requesting a new code.")
+
+    @classmethod
+    def _apply_cooldown(cls, **kwargs) -> None:
+        recipient, purpose = kwargs.get("email") or kwargs.get("phone_number"), kwargs.get("purpose")
+        cache_key = f"otp_cooldown:{recipient}:{purpose}"
+        cache.set(cache_key, True, timeout=cls.COOLDOWN_SECONDS)
+
+    @classmethod
+    def _create_otp_project(cls, **kwargs) -> tuple[str, OTP]:
+        raw_code = cls.generate_code()
+        expires_at = timezone.now() + timedelta(minutes=cls.EXPIRY_MINUTES)
+
+        otp = OTP(
+            email=kwargs.get("email"),
+            phone_number=kwargs.get("phone_number"),
+            purpose=kwargs.get("purpose"),
+            max_attempts=cls.MAX_ATTEMPTS,
+            expires_at=expires_at,
+        )
+        otp.set_code(raw_code)
+        otp.save()
+        return raw_code, otp
+
+    @classmethod
     def generate_code(cls) -> str:
         return get_random_string(cls.CODE_LENGTH, cls.ALLOWED_CHARS)
 
     @classmethod
-    def can_request_otp(cls, phone_number: str, purpose: str) -> tuple[bool, int]:
-        cache_key = f"otp_cooldown:{phone_number}:{purpose}"
+    def can_request_otp(cls, **kwargs) -> tuple[bool, int]:
+        kwargs = cls._check_params(kwargs)
+        identifier, purpose = kwargs.get("email") or kwargs.get("phone_number"), kwargs.get("purpose")
+        cache_key = f"otp_cooldown:{identifier}:{purpose}"
         remaining_ttl = cache.ttl(cache_key) if hasattr(cache, "ttl") else 0  # pyright: ignore[reportAttributeAccessIssue]
         if cache.get(cache_key):
             return False, remaining_ttl or cls.COOLDOWN_SECONDS
         return True, 0
 
     @classmethod
-    def revoke_pending_otps(cls, phone_number: str, purpose: str) -> int:
+    def revoke_pending_otps(cls, **kwargs) -> int:
+        kwargs = cls._check_params(kwargs)
+        email = kwargs.get("email")
+        phone_number = kwargs.get("phone_number")
+        purpose = kwargs.get("purpose")
         now = timezone.now()
         return (
             OTP.objects.select_for_update()
             .filter(
+                email=email,
                 phone_number=phone_number,
                 purpose=purpose,
                 status=OTP.Status.PENDING,
@@ -56,50 +109,86 @@ class OTPService:
 
     @classmethod
     def send_sms(cls, phone_number: str, purpose: str) -> OTP:
-        is_allowed, remaining_seconds = cls.can_request_otp(phone_number, purpose)
-        if not is_allowed:
-            raise OTPRateLimitError(
-                f"Please wait {remaining_seconds} seconds before requesting a new code."
-            )
+        phone_number = utils.normalize_phone_number(phone_number)
 
-        raw_code = cls.generate_code()
-        expires_at = timezone.now() + timedelta(minutes=cls.EXPIRY_MINUTES)
+        kwargs = {"phone_number": phone_number, "purpose": purpose}
+        cls._rate_limit_user(**kwargs)
 
         with transaction.atomic():
-            cls.revoke_pending_otps(phone_number, purpose)
+            cls.revoke_pending_otps(**kwargs)
+            raw_code, otp = cls._create_otp_project(**kwargs)
+            cls._apply_cooldown(**kwargs)
 
-            otp = OTP(
-                phone_number=phone_number,
-                purpose=purpose,
-                max_attempts=cls.MAX_ATTEMPTS,
-                expires_at=expires_at,
-            )
-            otp.set_code(raw_code)
-            otp.save()
-
-            cache_key = f"otp_cooldown:{phone_number}:{purpose}"
-            cache.set(cache_key, True, timeout=cls.COOLDOWN_SECONDS)
-
-        api_key = os.environ.get("KAVENEGAR_API_KEY")
-        api = KavenegarAPI(api_key)
-        params = {
-            "sender": "2000660110",
-            "receptor": phone_number,
-            "message": f"{raw_code}",
+        PURPOSE_CONFIG = {
+            "signup": {"action_text": "verify your email address"},
+            "login": {"action_text": "log into your account"},
+            "reset_password": {"action_text": "reset your password"},
         }
-        api.sms_send(params)
+
+        config = PURPOSE_CONFIG.get(purpose, {"action_text": "complete your request"})
+
+        message_text = (
+            f"Your verification code to {config['action_text']} is: {raw_code}\n"
+            f"This code is valid for {cls.EXPIRY_MINUTES} minutes.\n"
+            "If you did not request this, please ignore this message."
+        )
+
+        send_sms_task.delay_on_commit(phone_number, message_text)  # pyright: ignore[reportAttributeAccessIssue]
         return otp
 
     @classmethod
-    def verify(
-        cls, phone_number: str, purpose: str, raw_code: str
-    ) -> tuple[bool, str | None]:
+    def send_email(cls, email: str, purpose: str) -> OTP:
+        email = BaseUserManager.normalize_email(email)
+
+        kwargs = {"email": email, "purpose": purpose}
+        cls._rate_limit_user(**kwargs)
+
+        with transaction.atomic():
+            cls.revoke_pending_otps(**kwargs)
+            raw_code, otp = cls._create_otp_project(**kwargs)
+            cls._apply_cooldown(**kwargs)
+
+        PURPOSE_CONFIG = {
+            "signup": {
+                "subject": "Your Verification Code",
+                "action_text": "verify your email address",
+            },
+            "login": {
+                "subject": "Your Login OTP Code",
+                "action_text": "log into your account",
+            },
+            "reset_password": {
+                "subject": "Your Password Reset Code",
+                "action_text": "reset your password",
+            },
+        }
+
+        config = PURPOSE_CONFIG.get(purpose, {"subject": "Your Security Code", "action_text": "complete your request"})
+
+        subject = config["subject"]
+        message_text = (
+            f"Your verification code to {config['action_text']} is: {raw_code}\n"
+            f"This code is valid for {cls.EXPIRY_MINUTES} minutes.\n"
+            "If you did not request this, please ignore this email."
+        )
+
+        send_email_task.delay_on_commit(subject, message_text, email)  # pyright: ignore[reportAttributeAccessIssue]
+        return otp
+
+    @classmethod
+    def verify(cls, **kwargs) -> tuple[bool, str | None]:
+        kwargs = cls._check_params(kwargs)
+        raw_code = kwargs.get("raw_code")
+        if not raw_code:
+            raise ValueError("Missing required parameter: 'raw_code'")
+
         with transaction.atomic():
             otp = (
                 OTP.objects.select_for_update()
                 .filter(
-                    phone_number=phone_number,
-                    purpose=purpose,
+                    email=kwargs.get("email"),
+                    phone_number=kwargs.get("phone_number"),
+                    purpose=kwargs.get("purpose"),
                     status=OTP.Status.PENDING,
                 )
                 .order_by("-created_at", "-pk")
@@ -107,9 +196,7 @@ class OTPService:
             )
 
             if not otp:
-                return False, _(
-                    "No active OTP request found. Please request a new code."
-                )
+                return False, _("No active OTP request found. Please request a new code.")
 
             if otp.is_expired:
                 return False, _("Code has expired. Please request a new code.")

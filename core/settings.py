@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "core",
     # Custom apps
+    "core.apps.CoreConfig",
     "accounts.apps.AccountsConfig",
     "appointments.apps.AppointmentsConfig",
     "doctors.apps.DoctorsConfig",
@@ -121,9 +122,7 @@ AUTHENTICATION_BACKENDS = [
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        "NAME": (
-            "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"
-        ),
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
     },
     {
         "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
@@ -171,6 +170,18 @@ CACHES = {
     )
 }
 
+# Celery
+CELERY_BROKER_URL = env.str("CELERY_BROKER_URL", default="redis://localhost:6379/0")
+CELERY_RESULT_BACKEND = env.str("CACHE_URL", default="redis://127.0.0.1:6379/1")
+
+CELERY_TIMEZONE = TIME_ZONE
+
+CELERY_TASK_TRACK_STARTED = True
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_ACCEPT_CONTENT = ["json"]
 
 # Email
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
@@ -179,11 +190,13 @@ if env.bool("DJANGO_EMAIL_USE_SMTP", default=False):
     MAILERS = {
         "default": {
             "BACKEND": "django.core.mail.backends.smtp.EmailBackend",
-            "HOST": env("EMAIL_HOST"),
-            "PORT": env.int("EMAIL_PORT", default=587),
-            "USERNAME": env.str("EMAIL_HOST_USER", default=""),
-            "PASSWORD": env.str("EMAIL_HOST_PASSWORD", default=""),
-            "USE_TLS": env.bool("EMAIL_USE_TLS", default=True),
+            "OPTIONS": {
+                "host": env("EMAIL_HOST"),
+                "port": env.int("EMAIL_PORT", default=587),
+                "username": env.str("EMAIL_HOST_USER", default=""),
+                "password": env.str("EMAIL_HOST_PASSWORD", default=""),
+                "use_tls": env.bool("EMAIL_USE_TLS", default=True),
+            },
         },
     }
 else:

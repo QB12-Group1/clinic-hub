@@ -20,9 +20,7 @@ class User(AbstractUser):
         unique=True,
         null=True,
         blank=True,
-        help_text=_(
-            "Required for staff and admin users. Leave blank for normal OTP users."
-        ),
+        help_text=_("Required for staff and admin users. Leave blank for normal OTP users."),
     )
 
     phone_number = models.CharField(
@@ -40,55 +38,44 @@ class User(AbstractUser):
     class Meta(AbstractUser.Meta):
         constraints = [
             models.CheckConstraint(
-                condition=models.Q(
-                    is_staff=True, username__isnull=False, phone_number__isnull=True
-                )
-                | models.Q(
-                    is_staff=False, username__isnull=True, phone_number__isnull=False
-                ),
+                condition=models.Q(is_staff=True, username__isnull=False, phone_number__isnull=True)
+                | models.Q(is_staff=False, username__isnull=True, phone_number__isnull=False),
                 name="user_has_auth_identifier",
             )
         ]
 
     def clean(self) -> None:
-        self.username = self.username or None  # pyright: ignore[reportAttributeAccessIssue]
-        self.phone_number = (
-            utils.normalize_phone_number(self.phone_number)
-            if self.phone_number
-            else None
-        )
+        self.username = User.normalize_username(self.username) if self.username else None  # pyright: ignore[reportAttributeAccessIssue]
+        self.phone_number = utils.normalize_phone_number(self.phone_number) if self.phone_number else None
+
+        has_username, has_phone_number = bool(self.username), bool(self.phone_number)
+        if not (has_username ^ has_phone_number):
+            raise ValidationError(
+                _("Exactly one of username or phone number must be set (not both, not neither)."),
+                code="invalid_identifiers",
+            )
+
         super().clean()
 
-        if self.is_staff and not self.username:
-            raise ValidationError(
-                {"username": _("Staff and admin users must have a username.")}
-            )
-
-        if not self.is_staff and not self.phone_number:
-            raise ValidationError(
-                {"phone_number": _("Regular users must have a phone number.")}
-            )
-
     def save(self, *args, **kwargs) -> None:
-        self.username = self.username or None  # pyright: ignore[reportAttributeAccessIssue]
-        self.phone_number = (
-            utils.normalize_phone_number(self.phone_number)
-            if self.phone_number
-            else None
-        )
+        update_fields = kwargs.get("update_fields")
+
+        if update_fields is None or "username" in update_fields:
+            self.username = User.normalize_username(self.username) if self.username else None  # pyright: ignore[reportAttributeAccessIssue]
+        if update_fields is None or "phone_number" in update_fields:
+            self.phone_number = utils.normalize_phone_number(self.phone_number) if self.phone_number else None
+
         super().save(*args, **kwargs)
 
     def __str__(self) -> str:
         identifier = self.username or self.phone_number or f"User #{self.pk or 'new'}"
         full_name = self.get_full_name().strip()
-
-        if full_name:
-            return f"{identifier} ({full_name})"
-        return identifier
+        return f"{identifier} ({full_name})" if full_name else identifier
 
 
 class OTP(models.Model):
     class Purpose(models.TextChoices):
+        SIGNUP = "signup", _("Signup")
         LOGIN = "login", _("Login")
         PASSWORD_RESET = "password_reset", _("Password Reset")
 
@@ -97,13 +84,10 @@ class OTP(models.Model):
         VERIFIED = "verified", _("Verified")
         REVOKED = "revoked", _("Revoked")
 
-    phone_number = models.CharField(max_length=11)
-    purpose = models.CharField(
-        max_length=32, default=Purpose.LOGIN, choices=Purpose.choices
-    )
-    status = models.CharField(
-        max_length=16, default=Status.PENDING, choices=Status.choices, db_index=True
-    )
+    phone_number = models.CharField(max_length=11, null=True, blank=True)  # noqa: DJ001
+    email = models.EmailField(null=True, blank=True)  # noqa: DJ001
+    purpose = models.CharField(max_length=32, default=Purpose.LOGIN, choices=Purpose.choices)
+    status = models.CharField(max_length=16, default=Status.PENDING, choices=Status.choices, db_index=True)
 
     code = models.CharField(max_length=128)
     attempts_count = models.PositiveSmallIntegerField(default=0)
@@ -122,23 +106,47 @@ class OTP(models.Model):
                 fields=["phone_number", "purpose", "status", "expires_at"],
                 name="otp_lookup_idx",
             ),
-            models.Index(
-                fields=["phone_number", "created_at"], name="otp_phone_created_idx"
-            ),
+            models.Index(fields=["phone_number", "created_at"], name="otp_phone_created_idx"),
         )
         constraints = (
-            models.CheckConstraint(
-                condition=~models.Q(phone_number=""),
-                name="otp_has_recipient",
-            ),
             models.CheckConstraint(
                 condition=models.Q(attempts_count__lte=models.F("max_attempts")),
                 name="otp_attempts_within_limit",
             ),
+            models.CheckConstraint(
+                condition=models.Q(email__isnull=False, phone_number__isnull=True)
+                | models.Q(email__isnull=True, phone_number__isnull=False),
+                name="otp_has_recipient",
+            ),
         )
 
     def __str__(self) -> str:
-        return f"OTP ({self.purpose}) - {self.phone_number} [{self.effective_status}]"
+        recipient = self.phone_number or self.email or "No Recipient"
+        return f"OTP ({self.purpose}) - {recipient} [{self.effective_status}]"
+
+    def save(self, *args, **kwargs) -> None:
+        update_fields = kwargs.get("update_fields")
+
+        if update_fields is None or "email" in update_fields:
+            self.email = UserManager.normalize_email(self.email) if self.email else None
+        if update_fields is None or "phone_number" in update_fields:
+            self.phone_number = utils.normalize_phone_number(self.phone_number) if self.phone_number else None
+
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def clean(self) -> None:
+        self.email = UserManager.normalize_email(self.email) if self.email else None
+        self.phone_number = utils.normalize_phone_number(self.phone_number) if self.phone_number else None
+
+        has_email, has_phone_number = bool(self.email), bool(self.phone_number)
+        if not (has_email ^ has_phone_number):
+            raise ValidationError(
+                _("Exactly one of email or phone number must be set (not both, not neither)."),
+                code="invalid_recipient",
+            )
+
+        super().clean()
 
     @property
     def is_expired(self) -> bool:
@@ -150,11 +158,7 @@ class OTP(models.Model):
 
     @property
     def is_usable(self) -> bool:
-        return (
-            self.status == self.Status.PENDING
-            and not self.is_expired
-            and not self.is_exhausted
-        )
+        return self.status == self.Status.PENDING and not self.is_expired and not self.is_exhausted
 
     @property
     def effective_status(self) -> str:
@@ -176,11 +180,3 @@ class OTP(models.Model):
 
     def check_code(self, raw_code: str) -> bool:
         return check_password(raw_code, self.code)
-
-    def clean(self) -> None:
-        super().clean()
-        if not self.phone_number:
-            raise ValidationError(
-                _("An OTP must have an associated phone number."),
-                code="missing_recipient",
-            )

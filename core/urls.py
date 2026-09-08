@@ -16,7 +16,7 @@ Including another URLconf
 """
 
 from django.contrib import admin
-from django.urls import path
+from django.urls import include, path
 
 from core.cbv_views import (
     LoginShowcaseView,
@@ -101,4 +101,5 @@ urlpatterns = [
         name="cbv-auth-logout",
     ),
     path("admin/", admin.site.urls),
+    path("doctors/", include("doctors.urls")),
 ]

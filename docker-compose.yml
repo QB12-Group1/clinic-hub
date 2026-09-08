@@ -33,6 +33,7 @@ services:
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-clinic_hub}:${POSTGRES_PASSWORD:-clinic_hub}@db:5432/${POSTGRES_DB:-clinic_hub}
       CACHE_URL: redis://redis:6379/1
+      CELERY_BROKER_URL: redis://redis:6379/0
     volumes:
       - static_data:/app/staticfiles
       - media_data:/app/media
@@ -43,6 +44,38 @@ services:
         condition: service_healthy
     expose:
       - "8000"
+
+  celery_worker:
+    build: .
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-clinic_hub}:${POSTGRES_PASSWORD:-clinic_hub}@db:5432/${POSTGRES_DB:-clinic_hub}
+      CACHE_URL: redis://redis:6379/1
+      CELERY_BROKER_URL: redis://redis:6379/0
+    command: ["celery", "-A", "core.celery:app", "worker", "--loglevel=INFO"]
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  flower:
+    build: .
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-clinic_hub}:${POSTGRES_PASSWORD:-clinic_hub}@db:5432/${POSTGRES_DB:-clinic_hub}
+      CACHE_URL: redis://redis:6379/1
+      CELERY_BROKER_URL: redis://redis:6379/0
+    command: ["celery", "-A", "core.celery:app", "flower", "--port=5555"]
+    depends_on:
+      redis:
+        condition: service_healthy
+    ports:
+      - "5555:5555"
 
   nginx:
     image: nginx:1.27-alpine
