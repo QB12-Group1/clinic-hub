@@ -1,20 +1,17 @@
-import os
 import string
 from datetime import timedelta
 
 from django.contrib.auth.models import BaseUserManager
 from django.core.cache import cache
-from django.core.mail import send_mail
 from django.db import transaction
 from django.utils import timezone
 from django.utils.crypto import get_random_string
 from django.utils.translation import gettext as _
 from django.utils.translation import ngettext
-from kavenegar import KavenegarAPI
 
 import utils
 from accounts.models import OTP
-from core import settings
+from core.tasks import send_email_task, send_sms_task
 
 
 class OTPServiceError(Exception):
@@ -136,14 +133,7 @@ class OTPService:
             "If you did not request this, please ignore this message."
         )
 
-        api_key = os.environ.get("KAVENEGAR_API_KEY")
-        api = KavenegarAPI(api_key)
-        params = {
-            "sender": "2000660110",
-            "receptor": phone_number,
-            "message": _(message_text),
-        }
-        api.sms_send(params)
+        send_sms_task.delay_on_commit(phone_number, message_text)  # pyright: ignore[reportAttributeAccessIssue]
         return otp
 
     @classmethod
@@ -182,13 +172,7 @@ class OTPService:
             "If you did not request this, please ignore this email."
         )
 
-        send_mail(
-            subject=_(subject),
-            message=_(message_text),
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[email],
-            fail_silently=False,
-        )
+        send_email_task.delay_on_commit(subject, message_text, email)  # pyright: ignore[reportAttributeAccessIssue]
         return otp
 
     @classmethod
