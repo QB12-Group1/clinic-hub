@@ -1,5 +1,5 @@
 from django.db.models import Q, QuerySet
-from django.views.generic.list import ListView
+from django.views.generic.list import DetailView, ListView
 
 from doctors.models import Doctor
 
@@ -24,3 +24,12 @@ class DoctorListView(ListView):
             )
 
         return queryset.distinct()
+
+
+class DoctorDetailView(DetailView):
+    model = Doctor
+    template_name = "pages/detail.html"
+    context_object_name = "doctor"
+
+    def get_queryset(self) -> QuerySet[Doctor]:
+        return Doctor.objects.filter(account__is_active=True).select_related("account").prefetch_related("specialties")
