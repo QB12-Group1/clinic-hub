@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     # Custom apps
+    "core.apps.CoreConfig",
     "accounts.apps.AccountsConfig",
     "appointments.apps.AppointmentsConfig",
     "doctors.apps.DoctorsConfig",
@@ -167,6 +168,18 @@ CACHES = {
     )
 }
 
+# Celery
+CELERY_BROKER_URL = env.str("CELERY_BROKER_URL", default="redis://localhost:6379/0")
+CELERY_RESULT_BACKEND = env.str("CACHE_URL", default="redis://127.0.0.1:6379/1")
+
+CELERY_TIMEZONE = TIME_ZONE
+
+CELERY_TASK_TRACK_STARTED = True
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_ACCEPT_CONTENT = ["json"]
 
 # Email
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
@@ -187,7 +200,7 @@ if env.bool("DJANGO_EMAIL_USE_SMTP", default=False):
 else:
     MAILERS = {
         "default": {
-            "backend": "django.core.mail.backends.console.EmailBackend",
+            "BACKEND": "django.core.mail.backends.console.EmailBackend",
         },
     }
 
