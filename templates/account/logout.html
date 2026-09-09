@@ -12,6 +12,14 @@
 
             <form method="post" class="mt-8 flex flex-col gap-2 sm:flex-row sm:justify-center">
                 {% csrf_token %}
+                {% if form.non_field_errors %}
+                    {% for error in form.non_field_errors %}
+                        <p class="flex items-center gap-1.5 text-xs font-semibold text-error">
+                            <i data-lucide="circle-alert" class="size-3.5"></i>{{ error }}
+                        </p>
+                    {% endfor %}
+                {% endif %}
+
                 <a href="#" class="btn btn-ghost min-h-12 sm:order-1">Cancel</a>
                 <button type="submit" class="btn btn-error min-h-12 sm:order-2">
                     <i data-lucide="log-out" class="mr-1 size-4"></i>Log out

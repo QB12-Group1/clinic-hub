@@ -10,15 +10,30 @@
 
     <form method="post" class="mt-8 space-y-5">
         {% csrf_token %}
-        <div class="rounded-xl border border-transparent p-1 transition focus-within:border-primary/10">
-            <label class="field-label" for="id_phone_number">Phone number</label>
-            <div class="relative">
-                <i data-lucide="smartphone"
-                   class="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-slate-400"></i>
-                <input id="id_phone_number" name="phone_number" type="tel" inputmode="numeric"
-                       class="field-control pl-11" placeholder="09123456789" required autocomplete="tel" autofocus>
+
+        {% if form.non_field_errors %}
+            {% for error in form.non_field_errors %}
+                <p class="flex items-center gap-1.5 text-xs font-semibold text-error">
+                    <i data-lucide="circle-alert" class="size-3.5"></i>{{ error }}
+                </p>
+            {% endfor %}
+        {% endif %}
+
+        {% if form.phone_number %}
+            {% with field=form.phone_number %}
+                {% include "components/form_field.html" %}
+            {% endwith %}
+        {% else %}
+            <div class="rounded-xl border border-transparent p-1 transition focus-within:border-primary/10">
+                <label class="field-label" for="id_phone_number">Phone number</label>
+                <div class="relative">
+                    <i data-lucide="smartphone"
+                       class="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-slate-400"></i>
+                    <input id="id_phone_number" name="phone_number" type="tel" inputmode="numeric"
+                           class="field-control pl-11" placeholder="09123456789" required autocomplete="tel" autofocus>
+                </div>
             </div>
-        </div>
+        {% endif %}
 
         <button type="submit" class="btn btn-primary btn-block min-h-12">
             Send verification code<i data-lucide="arrow-right" class="ml-1 size-4"></i>

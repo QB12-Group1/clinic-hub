@@ -51,10 +51,31 @@
         </div>
 
         {% if form.non_field_errors %}
-            <p class="flex items-center gap-1.5 text-xs font-semibold text-error">
-                <i data-lucide="circle-alert" class="size-3.5"></i>Invalid code. 4 attempts
-                remaining.
-            </p>
+            {% for error in form.non_field_errors %}
+                <p class="flex items-center gap-1.5 text-xs font-semibold text-error">
+                    <i data-lucide="circle-alert" class="size-3.5"></i>{{ error }}
+                </p>
+            {% endfor %}
+        {% endif %}
+
+        {% if form.code %}
+            {% for error in form.code.errors %}
+                <p class="flex items-center gap-1.5 text-xs font-semibold text-error">
+                    <i data-lucide="circle-alert" class="size-3.5"></i>{{ error }}
+                </p>
+            {% endfor %}
+        {% endif %}
+
+        {% if form.errors %}
+            {% for field_name, field_errors in form.errors.items %}
+                {% if field_name != "__all__" and field_name != "code" %}
+                    {% for error in field_errors %}
+                        <p class="flex items-center gap-1.5 text-xs font-semibold text-error">
+                            <i data-lucide="circle-alert" class="size-3.5"></i>{{ error }}
+                        </p>
+                    {% endfor %}
+                {% endif %}
+            {% endfor %}
         {% endif %}
 
         <button type="submit" class="btn btn-primary btn-block min-h-12">
