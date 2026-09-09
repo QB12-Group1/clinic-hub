@@ -1,5 +1,5 @@
 from django.db.models import Q, QuerySet
-from django.views.generic.list import DetailView, ListView
+from django.views.generic import DetailView, ListView
 
 from doctors.models import Doctor
 
