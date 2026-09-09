@@ -2,17 +2,19 @@ from django.test import TestCase
 from accounts.models import User
 from doctors.models import Doctor, Specialty
 
+
 class SpecialtyModelTests(TestCase):
-    def test_str_returns_name(self): 
-        specialty = Specialty.objects.create(name="Cardiology") 
+    def test_str_returns_name(self):
+        specialty = Specialty.objects.create(name="Cardiology")
         self.assertEqual(str(specialty), "Cardiology")
-        
+
+
 class DoctorModelTests(TestCase):
-    def setUp(self): 
-        self.account = User.objects.create_user( phone_number="09123456789", first_name="Ali", last_name="Rezaei" ) #pyright:ignore
-        self.cardiology = Specialty.objects.create(name="Cardiology") 
+    def setUp(self):
+        self.account = User.objects.create_user(phone_number="09123456789", first_name="Ali", last_name="Rezaei")  # pyright:ignore
+        self.cardiology = Specialty.objects.create(name="Cardiology")
         self.dermatology = Specialty.objects.create(name="Dermatology")
-        
+
     def test_doctor_creation_with_required_fields(self):
         doctor = Doctor.objects.create(
             account=self.account,
