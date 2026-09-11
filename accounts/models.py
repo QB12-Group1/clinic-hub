@@ -15,12 +15,24 @@ from validators import PhoneNumberValidator
 class User(AbstractUser):
     REQUIRED_FIELDS = []
 
+    first_name = models.CharField(_("first name"), max_length=150)
+    last_name = models.CharField(_("last name"), max_length=150)
+
     username = models.CharField(
         max_length=150,
         unique=True,
         null=True,
         blank=True,
         help_text=_("Required for staff and admin users. Leave blank for normal OTP users."),
+    )
+
+    email = models.EmailField(
+        _("email address"),
+        unique=True,
+        null=True,
+        blank=True,
+        help_text=_("Required for regular users. Format: user@example.com"),
+        error_messages={"unique": _("A user with that email already exists.")},
     )
 
     phone_number = models.CharField(
@@ -84,8 +96,8 @@ class OTP(models.Model):
         VERIFIED = "verified", _("Verified")
         REVOKED = "revoked", _("Revoked")
 
-    phone_number = models.CharField(max_length=11, null=True, blank=True)  # noqa: DJ001
-    email = models.EmailField(null=True, blank=True)  # noqa: DJ001
+    phone_number = models.CharField(max_length=11)
+    email = models.EmailField()
     purpose = models.CharField(max_length=32, default=Purpose.LOGIN, choices=Purpose.choices)
     status = models.CharField(max_length=16, default=Status.PENDING, choices=Status.choices, db_index=True)
 
@@ -114,8 +126,7 @@ class OTP(models.Model):
                 name="otp_attempts_within_limit",
             ),
             models.CheckConstraint(
-                condition=models.Q(email__isnull=False, phone_number__isnull=True)
-                | models.Q(email__isnull=True, phone_number__isnull=False),
+                condition=models.Q(email__isnull=False, phone_number__isnull=False),
                 name="otp_has_recipient",
             ),
         )
@@ -140,9 +151,9 @@ class OTP(models.Model):
         self.phone_number = utils.normalize_phone_number(self.phone_number) if self.phone_number else None
 
         has_email, has_phone_number = bool(self.email), bool(self.phone_number)
-        if not (has_email ^ has_phone_number):
+        if not has_email or not has_phone_number:
             raise ValidationError(
-                _("Exactly one of email or phone number must be set (not both, not neither)."),
+                _("Both email and phone number must be provided."),
                 code="invalid_recipient",
             )
 
