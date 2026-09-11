@@ -2,14 +2,14 @@ import logging
 from typing import Any
 
 from django.contrib import messages
-from django.contrib.auth import authenticate, get_user_model, login
-from django.contrib.auth.mixins import UserPassesTestMixin
+from django.contrib.auth import authenticate, get_user_model, login, logout
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db.models import Q
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.utils.translation import gettext_lazy as _lazy
-from django.views.generic import FormView, View
+from django.views.generic import FormView, TemplateView, View
 
 from patients.models import Patient
 
@@ -97,6 +97,14 @@ class LoginView(UserPassesTestMixin, FormView):
             messages.error(self.request, _lazy("We could not send a verification code right now. Please try again."))
 
         return redirect("accounts:verify_otp")
+
+
+class LogoutView(LoginRequiredMixin, TemplateView):
+    template_name = "account/logout.html"
+
+    def post(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+        logout(request)
+        return redirect("")  # TODO: redirect the user to the home page
 
 
 class RequestOTPView(View):
