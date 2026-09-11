@@ -13,14 +13,14 @@ from reviews.models import Review
 
 class ReviewModelTests(TestCase):
     def setUp(self):
-        doctor_account = User.objects.create_user(phone_number="09123456789", first_name="Ali", last_name="Rezaei")  # pyright: ignore[reportCallIssue]
+        doctor_account = User.objects.create_user(phone_number="09123456789", email="doctor@example.com",first_name="Ali", last_name="Rezaei")  # pyright: ignore[reportCallIssue]
         self.doctor = Doctor.objects.create(
             account=doctor_account,
             practice_address="Tehran",
             practice_phone_number="09121112233",
             visit_fee=500000,
         )
-        patient_account = User.objects.create_user(phone_number="09121234567", first_name="Zahra", last_name="Roshan")  # pyright: ignore[reportCallIssue]
+        patient_account = User.objects.create_user(phone_number="09121234567",email="patient@example.com", first_name="Zahra", last_name="Roshan")  # pyright: ignore[reportCallIssue]
         self.patient = Patient.objects.create(account=patient_account)
 
         now = timezone.now()

@@ -11,7 +11,7 @@ class SpecialtyModelTests(TestCase):
 
 class DoctorModelTests(TestCase):
     def setUp(self):
-        self.account = User.objects.create_user(phone_number="09123456789", first_name="Ali", last_name="Rezaei")  # pyright:ignore
+        self.account = User.objects.create_user(phone_number="09123456789", email="test@example.com",first_name="Ali", last_name="Rezaei")  # pyright:ignore
         self.cardiology = Specialty.objects.create(name="Cardiology")
         self.dermatology = Specialty.objects.create(name="Dermatology")
 

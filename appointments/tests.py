@@ -10,7 +10,7 @@ from patients.models import Patient
 
 class TimeSlotModelTests(TestCase):
     def setUp(self):
-        account = User.objects.create_user(phone_number="09123456789", first_name="Ali", last_name="Rezaei")  # pyright:ignore[reportCallIssue]
+        account = User.objects.create_user(phone_number="09123456789", email="test@example.com", first_name="Ali", last_name="Rezaei")  # pyright:ignore[reportCallIssue]
         self.doctor = Doctor.objects.create(
             account=account, practice_address="Tehran", practice_phone_number="09121112233", visit_fee=500000
         )
@@ -34,11 +34,11 @@ class TimeSlotModelTests(TestCase):
 
 class AppointmentModelTests(TestCase):
     def setUp(self):
-        doctor_account = User.objects.create_user(phone_number="09123456789", first_name="Ali", last_name="Rezaei")  # pyright:ignore[reportCallIssue]
+        doctor_account = User.objects.create_user(phone_number="09123456789", email="doctor@example.com",first_name="Ali", last_name="Rezaei")  # pyright:ignore[reportCallIssue]
         self.doctor = Doctor.objects.create(
             account=doctor_account, practice_address="Tehran", practice_phone_number="09121112233", visit_fee=500000
         )
-        patient_account = User.objects.create_user(phone_number="09121234567", first_name="Sara", last_name="Ahmadi")  # pyright:ignore[reportCallIssue]
+        patient_account = User.objects.create_user(phone_number="09121234567",email="patient@example.com", first_name="Sara", last_name="Ahmadi")  # pyright:ignore[reportCallIssue]
         self.patient = Patient.objects.create(account=patient_account)
         now = timezone.now()
         self.slot = TimeSlot.objects.create(doctor=self.doctor, start_time=now, end_time=now + timedelta(minutes=30))

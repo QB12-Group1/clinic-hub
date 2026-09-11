@@ -8,7 +8,7 @@ from django.db import IntegrityError, transaction
 
 class WalletModelTests(TestCase):
     def setUp(self):
-        self.account = User.objects.create_user(phone_number="09123456789", first_name="Ali")  # pyright: ignore[reportCallIssue]
+        self.account = User.objects.create_user(phone_number="09123456789", email="test@example.com", first_name="Ali")  # pyright: ignore[reportCallIssue]
 
     def test_wallet_default_balance_is_zero(self):
         wallet = Wallet.objects.create(account=self.account)
@@ -25,7 +25,7 @@ class WalletModelTests(TestCase):
 
 class TransactionModelTests(TestCase):
     def setUp(self):
-        account = User.objects.create_user(phone_number="09123456789", first_name="Ali")  # pyright: ignore[reportCallIssue]
+        account = User.objects.create_user(phone_number="09123456789", email="test@example.com" ,first_name="Ali")  # pyright: ignore[reportCallIssue]
         self.wallet = Wallet.objects.create(account=account)
 
     def test_transaction_creation_and_related_name(self):
