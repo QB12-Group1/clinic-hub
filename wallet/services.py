@@ -6,50 +6,49 @@ User = get_user_model()
 
 
 class InsufficientBalanceError(Exception):
-    """Raised when a wallet's balance is too low to cover a requested charge."""
+    """Raised when a wallet has insufficient balance."""
 
 
-def _validate_amount(amount: int) -> None:
+class WalletService:
+    def _validate_amount(self, amount: int) -> None:
 
-    if not isinstance(amount, int) or isinstance(amount, bool):
-        raise TypeError(f"amount must be an int, got {type(amount).__name__}")
+        if amount <= 0:
+            raise ValueError("amount must be greater than 0")
 
+    def top_up_wallet(self, *, account: User, amount: int) -> Wallet:
 
-def top_up_wallet(*, account: User, amount: int) -> Wallet:
+        self._validate_amount(amount)
 
-    _validate_amount(amount)
+        with transaction.atomic():
+            wallet = Wallet.objects.select_for_update().get(account=account)
+            wallet.balance += amount
+            wallet.save(update_fields=["balance"])
 
-    with transaction.atomic():
-        wallet = Wallet.objects.select_for_update().get(account=account)
-        wallet.balance += amount
-        wallet.save(update_fields=["balance"])
-
-        Transaction.objects.create(
-            wallet=wallet,
-            type=Transaction.TransactionType.DEPOSIT,
-            amount=amount,
-        )
-        return wallet
-
-
-def charge_wallet(*, account: User, amount: int) -> Wallet:
-
-    _validate_amount(amount)
-
-    with transaction.atomic():
-        wallet = Wallet.objects.select_for_update().get(account=account)
-
-        if wallet.balance < amount:
-            raise InsufficientBalanceError(
-                f"Wallet balance ({wallet.balance}) is less than the required amount ({amount})."
+            Transaction.objects.create(
+                wallet=wallet,
+                type=Transaction.TransactionType.DEPOSIT,
+                amount=amount,
             )
+            return wallet
 
-        wallet.balance -= amount
-        wallet.save(update_fields=["balance"])
+    def debit_wallet(self, *, account: User, amount: int) -> Wallet:
 
-        Transaction.objects.create(
-            wallet=wallet,
-            type=Transaction.TransactionType.PAYMENT,
-            amount=amount,
-        )
-        return wallet
+        self._validate_amount(amount)
+
+        with transaction.atomic():
+            wallet = Wallet.objects.select_for_update().get(account=account)
+
+            if wallet.balance < amount:
+                raise InsufficientBalanceError(
+                    f"Wallet balance ({wallet.balance}) is less than the required amount ({amount})."
+                )
+
+            wallet.balance -= amount
+            wallet.save(update_fields=["balance"])
+
+            Transaction.objects.create(
+                wallet=wallet,
+                type=Transaction.TransactionType.PAYMENT,
+                amount=amount,
+            )
+            return wallet
