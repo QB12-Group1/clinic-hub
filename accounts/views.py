@@ -4,6 +4,7 @@ from typing import Any
 from django.contrib import messages
 from django.contrib.auth import authenticate, get_user_model, login
 from django.contrib.auth.mixins import UserPassesTestMixin
+from django.db.models import Q
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
@@ -12,7 +13,7 @@ from django.views.generic import FormView, View
 
 from patients.models import Patient
 
-from .forms import RegisterForm, VerifyOTPForm
+from .forms import LoginForm, RegisterForm, VerifyOTPForm
 from .models import OTP
 from .services import OTPRateLimitError, OTPService, OTPServiceError
 
@@ -58,7 +59,44 @@ class RegisterView(UserPassesTestMixin, FormView):
                 "We sent a verification code to your phone number. If you didn't receive any message, check your email."
             ),
         )
-        return redirect("accounts:verify_otp")  # TODO: redirect to the verify otp page
+        return redirect("accounts:verify_otp")
+
+
+class LoginView(UserPassesTestMixin, FormView):
+    form_class = LoginForm
+    template_name = "account/login.html"
+
+    def test_func(self) -> bool | None:
+        return not self.request.user.is_authenticated
+
+    def handle_no_permission(self) -> HttpResponseRedirect:
+        return redirect("")  # TODO: redirect user to the home page
+
+    def form_valid(self, form: LoginForm) -> HttpResponse:
+        credential = form.cleaned_data["credential"]
+        account = User.objects.filter(Q(email=credential) | Q(phone_number=credential)).first()
+        if not account:
+            form.add_error("credential", _lazy("No account found with these credentials."))
+            return self.form_invalid(form)
+
+        auth_data = {
+            "credentials": {
+                "email": account.email,  # pyright: ignore[reportAttributeAccessIssue]
+                "phone_number": account.phone_number,  # pyright: ignore[reportAttributeAccessIssue]
+            },
+            "purpose": OTP.Purpose.LOGIN,
+        }
+        self.request.session["auth_data"] = auth_data
+
+        try:
+            OTPService.send_sms_with_fallback(**auth_data["credentials"], purpose=auth_data["purpose"])
+        except OTPRateLimitError as e:
+            messages.error(self.request, str(e))
+        except OTPServiceError:
+            logger.exception("Failed to send signup OTP")
+            messages.error(self.request, _lazy("We could not send a verification code right now. Please try again."))
+
+        return redirect("accounts:verify_otp")
 
 
 class RequestOTPView(View):

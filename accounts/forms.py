@@ -23,3 +23,9 @@ class VerifyOTPForm(forms.Form):
         help_text=_("The code sent to you by SMS. (Note: If you didn't receive it, check your email.)"),
         validators=[RegexValidator(rf"^[{OTPService.ALLOWED_CHARS}]+$")],
     )
+
+
+class LoginForm(forms.Form):
+    credential = forms.CharField(
+        label=_("Username or Email"), required=True, help_text=_("Enter your username or email address.")
+    )
