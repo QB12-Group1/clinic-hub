@@ -1,0 +1,30 @@
+{% extends "layouts/shell.html" %}
+{% block title %}Log out · Clinic Hub{% endblock %}
+{% block shell_content %}
+    <div class="mt-6 flex min-h-[70vh] items-center justify-center">
+        <div class="surface w-full max-w-md p-8 text-center">
+            <div class="mx-auto grid size-14 place-items-center rounded-2xl bg-error/10 text-error">
+                <i data-lucide="log-out" class="size-6"></i>
+            </div>
+            <h1 class="mt-5 text-xl font-extrabold tracking-tight">Log out of Clinic Hub?</h1>
+            <p class="mt-2 text-sm text-slate-500">You'll need to verify your phone number again the next time you sign
+                in.</p>
+
+            <form method="post" class="mt-8 flex flex-col gap-2 sm:flex-row sm:justify-center">
+                {% csrf_token %}
+                {% if form.non_field_errors %}
+                    {% for error in form.non_field_errors %}
+                        <p class="flex items-center gap-1.5 text-xs font-semibold text-error">
+                            <i data-lucide="circle-alert" class="size-3.5"></i>{{ error }}
+                        </p>
+                    {% endfor %}
+                {% endif %}
+
+                <a href="#" class="btn btn-ghost min-h-12 sm:order-1">Cancel</a>
+                <button type="submit" class="btn btn-error min-h-12 sm:order-2">
+                    <i data-lucide="log-out" class="mr-1 size-4"></i>Log out
+                </button>
+            </form>
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,5 @@
+<div id="appointment-list" class="mt-5 space-y-3">
+    {% for item in appointments %}{% include "components/appointment_row.html" %}{% empty %}
+        {% include "components/empty_state.html" with icon="calendar-x" title="No appointments" description="Your schedule is clear for now." %}
+    {% endfor %}
+</div>

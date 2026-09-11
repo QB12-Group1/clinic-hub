@@ -1,0 +1,58 @@
+{% extends "layouts/shell.html" %}
+{% block title %}Overview · Clinic Hub{% endblock %}
+{% block header_content %}
+    <div class="hidden lg:block">
+        <div class="eyebrow">Sunday, September 6, 2026</div>
+        <h1 class="mt-1 text-2xl font-extrabold">Good morning, Alex <span>👋</span></h1></div>{% endblock %}
+{% block shell_content %}
+    <div x-data="{ period: 'This week' }">
+        <div class="mt-8 lg:hidden">
+            <div class="eyebrow">Sunday, September 6, 2026</div>
+            <h1 class="mt-1 text-2xl font-extrabold">Good morning, Alex <span>👋</span></h1></div>
+        <section class="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {% for stat in stats %}{% include "components/stat_card.html" %}{% endfor %}
+        </section>
+        <section class="mt-8 grid gap-6 xl:grid-cols-[1.35fr_1fr]">
+            <div class="surface p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="eyebrow">Schedule</div>
+                        <h2 class="mt-1 text-xl font-bold">Today’s appointments</h2></div>
+                    <button class="btn btn-sm btn-outline border-slate-200" hx-get="/" hx-select="#appointment-list"
+                            hx-target="#appointment-list" hx-swap="outerHTML"><i data-lucide="refresh-cw"
+                                                                                 class="mr-1 size-3.5"></i>Refresh
+                    </button>
+                </div>
+                {% include "partials/appointment_list.html" %}</div>
+            <div class="surface p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="eyebrow">Capacity</div>
+                        <h2 class="mt-1 text-xl font-bold">Weekly activity</h2></div>
+                    <select x-model="period" class="select select-bordered select-sm w-auto">
+                        <option>This week</option>
+                        <option>Last week</option>
+                    </select></div>
+                <div class="mt-8 flex h-44 items-end justify-between gap-2">{% for bar in bars %}
+                    <div class="flex flex-1 flex-col items-center gap-2">
+                        <div class="w-full rounded-t-lg bg-primary/15" style="height: {{ bar.height }}%">
+                            <div class="h-full rounded-t-lg bg-primary" style="height: {{ bar.fill }}%"></div>
+                        </div>
+                        <span class="text-xs text-slate-400">{{ bar.day }}</span></div>{% endfor %}</div>
+                <div class="mt-5 flex items-center justify-between border-t border-slate-100 pt-4 text-sm"><span
+                        class="text-slate-500">Completed visits</span><strong>126 <span
+                        class="font-medium text-emerald-500">+12%</span></strong></div>
+            </div>
+        </section>
+        <section id="appointments" class="mt-8 surface overflow-hidden">
+            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 p-6">
+                <div>
+                    <div class="eyebrow">Care team</div>
+                    <h2 class="mt-1 text-xl font-bold">Your doctors</h2></div>
+                <button class="btn btn-primary btn-sm"><i data-lucide="plus" class="mr-1 size-4"></i>Add doctor</button>
+            </div>
+            <div class="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-3">
+                {% for doctor in doctors %}{% include "components/doctor_card.html" %}{% endfor %}</div>
+        </section>
+    </div>
+{% endblock %}

@@ -1,0 +1,10 @@
+<div class="flex items-center gap-4 rounded-xl border border-slate-100 p-3">
+    <div class="grid size-11 place-items-center rounded-xl bg-{{ item.tone }}/10 text-sm font-bold text-{{ item.tone }}">{{ item.time }}</div>
+    <div class="min-w-0 flex-1">
+        <div class="truncate font-bold">{{ item.patient }}</div>
+        <div class="text-sm text-slate-500">{{ item.type }} · {{ item.doctor }}</div>
+    </div>
+    <span class="badge badge-{{ item.status_tone }} badge-sm">{{ item.status }}</span>
+    <button class="btn btn-ghost btn-square btn-sm" aria-label="More actions"><i data-lucide="more-horizontal"
+                                                                                 class="size-4"></i></button>
+</div>

@@ -1,0 +1,4 @@
+<button class="btn btn-{{ variant|default:'primary' }} btn-{{ size|default:'sm' }} {{ class }}"
+        {% if hx_get %}hx-get="{{ hx_get }}"{% endif %} {% if hx_target %}hx-target="{{ hx_target }}"{% endif %}>
+    {% if icon %}<i data-lucide="{{ icon }}" class="mr-1 size-4"></i>{% endif %}{{ label }}
+</button>
