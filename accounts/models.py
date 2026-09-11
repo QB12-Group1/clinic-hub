@@ -89,7 +89,6 @@ class OTP(models.Model):
     class Purpose(models.TextChoices):
         SIGNUP = "signup", _("Signup")
         LOGIN = "login", _("Login")
-        PASSWORD_RESET = "password_reset", _("Password Reset")
 
     class Status(models.TextChoices):
         PENDING = "pending", _("Pending")

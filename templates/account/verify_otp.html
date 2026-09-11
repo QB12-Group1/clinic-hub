@@ -15,8 +15,8 @@
     </h1>
     <p class="mt-2 text-sm text-slate-500">
         We sent a 6-digit code to
-        <span class="font-semibold text-slate-700">09123456789</span>.
-        <a href="#" class="font-semibold text-primary hover:underline"
+        <span class="font-semibold text-slate-700">{{ auth_phone_number }}</span>.
+        <a href="{{ wrong_credentials_url }}" class="font-semibold text-primary hover:underline"
         >Wrong number?</a
         >
     </p>
@@ -95,9 +95,13 @@
     >
         </template>
         <template x-if="seconds === 0">
-            <a href="#" class="font-semibold text-primary hover:underline"
-            >Resend code</a
-            >
+            <form method="POST" action="{% url 'accounts:request_otp' %}" class="inline">
+                {% csrf_token %}
+                <button type="submit"
+                        class="font-semibold text-primary hover:underline bg-transparent border-none p-0 cursor-pointer">
+                    Resend code
+                </button>
+            </form>
         </template>
     </div>
 {% endblock %}
