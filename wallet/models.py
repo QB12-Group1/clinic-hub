@@ -33,5 +33,13 @@ class Transaction(models.Model):
     amount = models.PositiveBigIntegerField()
     created_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(amount__gt=0),
+                name="transaction_amount_positive",
+            ),
+        ]
+
     def __str__(self) -> str:
         return f"{self.wallet} - {self.type} - {self.amount}"
