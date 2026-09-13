@@ -11,8 +11,6 @@ from django.urls import reverse_lazy
 from django.utils.translation import gettext_lazy as _lazy
 from django.views.generic import FormView, TemplateView, View
 
-from patients.models import Patient
-
 from .forms import LoginForm, RegisterForm, VerifyOTPForm
 from .models import OTP
 from .services import OTPRateLimitError, OTPService, OTPServiceError
@@ -139,8 +137,7 @@ class VerifyOTPView(FormView):
             form.add_error("code", message)
             return self.form_invalid(form)
         else:
-            account, _ = User.objects.get_or_create(**credentials)
-            patient_profile, _ = Patient.objects.get_or_create(account=account)
+            account, _ = User.objects.create_user(**credentials)  # pyright: ignore[reportAttributeAccessIssue]
             if not self.request.user.is_authenticated:
                 user = authenticate(self.request, **credentials)
                 if user:
