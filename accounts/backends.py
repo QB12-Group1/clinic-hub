@@ -2,8 +2,8 @@ from typing import Any
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.backends import BaseBackend
+from django.contrib.auth.models import BaseUserManager
 from django.http.request import HttpRequest
-from django.views.decorators.debug import sensitive_variables
 
 import utils
 
@@ -14,20 +14,21 @@ User = get_user_model()
 # Make sure to use the OTP service to validate the user's identity, then authenticate.
 # (This is actually a note to my idiot self, not you, my beloved teammates)
 class PhoneBackend(BaseBackend):
-    @sensitive_variables("otp")
     def authenticate(
         self,
         request: HttpRequest | None,
         phone_number: str | None = None,
+        email: str | None = None,
         **kwargs: Any,
     ) -> User | None:
         if not phone_number:
             return None
 
         phone_number = utils.normalize_phone_number(phone_number)
+        email = BaseUserManager.normalize_email(email)
 
         try:
-            user = User.objects.get(phone_number=phone_number)
+            user = User.objects.get(email=email, phone_number=phone_number, **kwargs)
         except User.DoesNotExist:
             return None
 
