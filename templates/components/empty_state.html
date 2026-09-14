@@ -1,0 +1,7 @@
+<div class="rounded-2xl border border-dashed border-slate-200 p-8 text-center">
+    <i data-lucide="{{ icon|default:'inbox' }}" class="mx-auto size-8 text-slate-300"></i>
+    <h3 class="mt-3 font-bold">{{ title|default:'Nothing here yet' }}</h3>
+    {% if description %}<p class="mt-1 text-sm text-slate-500">{{ description }}</p>{% endif %}
+    {% if action_label %}
+        <button class="btn btn-primary btn-sm mt-4">{{ action_label }}</button>{% endif %}
+</div>

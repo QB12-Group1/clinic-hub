@@ -1,0 +1,161 @@
+{% extends "layouts/page.html" %}
+{% block title %}Patient Home · Clinic Hub{% endblock %}
+{% block header_content %}
+    <div class="hidden lg:block">
+        <div class="eyebrow">{% now "l, F j, Y" %}</div>
+        <h1 class="mt-1 text-2xl font-extrabold">Welcome back,
+            {{ user.get_full_name|default:user.get_username|default:"Patient" }} 👋</h1>
+    </div>
+{% endblock %}
+{% block page_content %}
+    {% include "components/page_header.html" with page_title="Home dashboard" page_description="Find doctors, check available slots, and track your care journey." %}
+
+    <section class="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <article class="surface p-6">
+            <div class="eyebrow">Wallet</div>
+            <div class="mt-1 text-3xl font-extrabold">
+                {{ wallet.balance|default:0 }} <span class="text-sm font-semibold text-slate-500">Toman</span>
+            </div>
+            <p class="mt-2 text-sm text-slate-500">Use your wallet to pay for confirmed appointments.</p>
+            <div class="mt-4 flex flex-wrap gap-2">
+                <a href="{{ top_up_wallet_url|default:'/wallet/top-up/' }}" class="btn btn-primary btn-sm"><i data-lucide="wallet-minimal"
+                                                                                  class="mr-1 size-4"></i>Top up wallet</a>
+                <a href="{% url 'wallet:detail' %}" class="btn btn-ghost btn-sm">Wallet details</a>
+            </div>
+        </article>
+
+        <article class="surface p-6">
+            <div class="eyebrow">Next visit</div>
+            <div class="mt-1 text-lg font-bold">
+                {% if next_appointment %}
+                    {{ next_appointment.time_slot.start_time|date:"M j, Y · H:i" }}
+                {% else %}
+                    No upcoming appointment
+                {% endif %}
+            </div>
+            <p class="mt-2 text-sm text-slate-500">
+                {% if next_appointment %}
+                    {{ next_appointment.time_slot.doctor.account.get_full_name|default:next_appointment.time_slot.doctor }}
+                {% else %}
+                    Book a slot to get an appointment time.
+                {% endif %}
+            </p>
+        </article>
+
+        <article class="surface p-6">
+            <div class="eyebrow">My reviews</div>
+            <div class="mt-1 text-3xl font-extrabold">{{ reviews_count|default:0 }}</div>
+            <p class="mt-2 text-sm text-slate-500">Published by completed visits.</p>
+        </article>
+
+        <article class="surface p-6">
+            <div class="eyebrow">Active appointments</div>
+            <div class="mt-1 text-3xl font-extrabold">{{ active_appointments_count|default:0 }}</div>
+            <p class="mt-2 text-sm text-slate-500">Confirmed + pending in your upcoming schedule.</p>
+        </article>
+    </section>
+
+    <section class="mt-6 surface overflow-hidden">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 p-5">
+            <div>
+                <div class="eyebrow">Doctors</div>
+                <h2 class="mt-1 text-xl font-bold">Browse doctors & fees</h2>
+            </div>
+            <a href="{% url 'doctors:list' %}" class="btn btn-primary btn-sm"><i data-lucide="stethoscope"
+                                                                                class="mr-1 size-4"></i>See all doctors</a>
+        </div>
+        <div class="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-3">
+            {% for doctor in doctors %}
+                <article class="rounded-xl border border-slate-100 p-4">
+                    <div class="flex items-start justify-between gap-3">
+                        <div>
+                            <h3 class="font-bold">Dr. {{ doctor.account.get_full_name|default:doctor.full_name }}</h3>
+                            <p class="text-sm text-slate-500">{% if doctor.specialties.first %}{{ doctor.specialties.first.name }}{% else %}Specialist{% endif %}</p>
+                        </div>
+                        <span class="badge badge-ghost">{{ doctor.visit_fee }} Toman</span>
+                    </div>
+                    <p class="mt-3 line-clamp-2 text-sm text-slate-500">
+                        {{ doctor.biography|default:"No summary provided."|truncatechars:90 }}</p>
+                    <div class="mt-4 flex flex-wrap items-center gap-2">
+                        <a href="{{ doctor.detail_url }}" class="btn btn-ghost btn-xs">View profile</a>
+                    </div>
+                </article>
+            {% empty %}
+                {% include "components/empty_state.html" with icon="users" title="No doctors available" description="Check back soon." %}
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="mt-6 grid gap-6 xl:grid-cols-[1.35fr_1fr]">
+        <div class="surface">
+            <div class="border-b border-slate-100 p-5">
+                <div class="eyebrow">Available slots</div>
+                <h2 class="mt-1 text-xl font-bold">Book now if you have enough balance</h2>
+            </div>
+            <div class="space-y-3 p-4">
+                {% for slot in available_slots %}
+                    <div class="flex items-center justify-between gap-3 rounded-xl border border-slate-100 p-3">
+                        <div>
+                            <div class="font-bold">{{ slot.start_time|date:"M j, Y" }} ·
+                                {{ slot.start_time|date:"H:i" }}
+                            </div>
+                            <div class="text-sm text-slate-500">
+                                Dr. {{ slot.doctor.account.get_full_name }} · {{ slot.doctor.visit_fee }} Toman
+                            </div>
+                        </div>
+                        {% if slot.is_booked %}
+                            <span class="badge badge-error">Booked</span>
+                        {% else %}
+                            {% if slot.book_url %}
+                                {% if wallet.balance >= slot.doctor.visit_fee %}
+                                    <a href="{{ slot.book_url }}" class="btn btn-primary btn-xs">Book now</a>
+                                {% else %}
+                                    <a href="{% url 'wallet:top-up' %}" class="btn btn-ghost btn-xs">Top up required</a>
+                                {% endif %}
+                            {% else %}
+                                <button class="btn btn-ghost btn-xs" disabled>Booking unavailable</button>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                {% empty %}
+                    {% include "components/empty_state.html" with icon="calendar-x" title="No open time slots" description="No free slots were found. Try another doctor or date." %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="surface">
+            <div class="border-b border-slate-100 p-5">
+                <div class="eyebrow">Reviews</div>
+                <h2 class="mt-1 text-xl font-bold">You can review visited appointments</h2>
+            </div>
+            <div class="p-4 space-y-3">
+                {% for appointment in recent_appointments %}
+                    <article class="rounded-xl border border-slate-100 p-3">
+                        <div class="flex items-start justify-between gap-3">
+                            <div>
+                                <div class="font-bold">Dr. {{ appointment.time_slot.doctor.account.get_full_name }}</div>
+                                <div class="text-sm text-slate-500">{{ appointment.time_slot.start_time|date:"M j, Y" }}</div>
+                            </div>
+                            <span class="badge
+                                {% if appointment.status == "confirmed" %}badge-success{% elif appointment.status == "pending" %}badge-warning{% else %}badge-error{% endif %}">
+                                {{ appointment.status|title }}
+                            </span>
+                        </div>
+                        <div class="mt-3">
+                            {% if appointment.can_review %}
+                                <a href="{{ appointment.review_url }}" class="btn btn-primary btn-xs">Write review</a>
+                                <span class="ml-2 text-xs text-slate-500">You can share your experience now.</span>
+                            {% elif appointment.has_review %}
+                                <p class="text-sm text-slate-500">You already reviewed this visit.</p>
+                            {% else %}
+                                <p class="text-sm text-slate-500">Review will be available after the confirmed visit date.</p>
+                            {% endif %}
+                        </div>
+                    </article>
+                {% empty %}
+                    {% include "components/empty_state.html" with icon="star" title="No appointment history yet" description="When you attend and complete an appointment, you can leave a review." %}
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+{% endblock %}
