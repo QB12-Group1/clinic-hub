@@ -27,5 +27,5 @@ class VerifyOTPForm(forms.Form):
 
 class LoginForm(forms.Form):
     credential = forms.CharField(
-        label=_("Username or Email"), required=True, help_text=_("Enter your username or email address.")
+        label=_("Email or Phone Number"), required=True, help_text=_("Enter your email address or phone number.")
     )
