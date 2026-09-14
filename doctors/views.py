@@ -1,7 +1,9 @@
 from django.db.models import Q, QuerySet
-from django.views.generic.list import ListView
+from django.urls import reverse_lazy
+from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
 
-from doctors.models import Doctor
+from accounts.mixins import StaffRequiredMixins
+from doctors.models import Doctor, Specialty
 
 
 class DoctorListView(ListView):
@@ -24,3 +26,38 @@ class DoctorListView(ListView):
             )
 
         return queryset.distinct()
+
+
+class DoctorDetailView(DetailView):
+    model = Doctor
+    template_name = "pages/detail.html"
+    context_object_name = "doctor"
+
+    def get_queryset(self) -> QuerySet[Doctor]:
+        return Doctor.objects.filter(account__is_active=True).select_related("account").prefetch_related("specialties")
+
+
+class SpecialtyListView(ListView):
+    model = Specialty
+    template_name = "pages/list.html"
+    context_object_name = "Specialties"
+
+
+class SpecialtyCreateView(StaffRequiredMixins, CreateView):
+    model = Specialty
+    template_name = "pages/create.html"
+    fields = ["name", "description"]
+    success_url = reverse_lazy("doctors:specialty-list")
+
+
+class SpecialtyUpdateView(StaffRequiredMixins, UpdateView):
+    model = Specialty
+    template_name = "pages/edit.html"
+    fields = ["name", "description"]
+    success_url = reverse_lazy("doctors:specialty-list")
+
+
+class SpecialtyDeleteView(StaffRequiredMixins, DeleteView):
+    model = Specialty
+    template_name = "pages/Delete.html"
+    success_url = reverse_lazy("doctors:specialty-list")

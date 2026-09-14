@@ -38,7 +38,5 @@ line-ending = "auto"
 
 [tool.pyright]
 pythonVersion = "3.12"
-venvPath = "."
-venv = ".venv"
 exclude = ["**/migrations", "**/.venv"]
 typeCheckingMode = "standard"

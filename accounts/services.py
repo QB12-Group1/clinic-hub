@@ -97,13 +97,7 @@ class OTPService:
         now = timezone.now()
         return (
             OTP.objects.select_for_update()
-            .filter(
-                email=email,
-                phone_number=phone_number,
-                purpose=purpose,
-                status=OTP.Status.PENDING,
-                expires_at__gt=now,
-            )
+            .filter(email=email, phone_number=phone_number, purpose=purpose, status=OTP.Status.PENDING)
             .update(status=OTP.Status.REVOKED, consumed_at=now)
         )
 
