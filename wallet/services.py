@@ -1,3 +1,5 @@
+import warnings
+
 from django.contrib.auth import get_user_model
 from django.db import transaction
 
@@ -35,7 +37,7 @@ class WalletService:
             return wallet
 
     @classmethod
-    def debit_wallet(cls, *, account: User, amount: int) -> Wallet:
+    def charge_wallet(cls, *, account: User, amount: int) -> Wallet:
 
         cls._validate_amount(amount)
 
@@ -56,3 +58,8 @@ class WalletService:
                 amount=amount,
             )
             return wallet
+
+    @classmethod
+    def debit_wallet(cls, *, account: User, amount: int) -> Wallet:
+        warnings.warn("debit_wallet is deprecated; use charge_wallet instead.", DeprecationWarning, stacklevel=2)
+        return cls.charge_wallet(account=account, amount=amount)
