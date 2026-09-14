@@ -7,3 +7,7 @@ class WalletTopUpForm(forms.Form):
         label="Amount (Toman)",
         widget=forms.NumberInput(attrs={"class": "field-control", "inputmode": "numeric"}),
     )
+
+
+class WalletAppointmentPaymentForm(forms.Form):
+    confirm = forms.BooleanField(required=True, initial=True, widget=forms.HiddenInput())
