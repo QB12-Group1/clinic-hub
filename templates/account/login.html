@@ -19,8 +19,8 @@
             {% endfor %}
         {% endif %}
 
-        {% if form.phone_number %}
-            {% with field=form.phone_number %}
+        {% if form.credential %}
+            {% with field=form.credential %}
                 {% include "components/form_field.html" %}
             {% endwith %}
         {% else %}
@@ -52,6 +52,6 @@
 
     <p class="mt-6 text-center text-sm text-slate-500">
         New to Clinic Hub?
-        <a href="#" class="font-semibold text-primary hover:underline">Create an account</a>
+        <a href="{% url 'accounts:register' %}" class="font-semibold text-primary hover:underline">Create an account</a>
     </p>
 {% endblock %}

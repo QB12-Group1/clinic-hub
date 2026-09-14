@@ -40,7 +40,7 @@ class WalletDetailView(LoginRequiredMixin, DetailView):
                 "fields": [
                     {"label": "Balance", "value": f"{wallet.balance:,} Toman"},
                 ],
-                "back_url": reverse_lazy("dashboard"),
+                "back_url": reverse_lazy("home"),
                 "primary_action": {
                     "label": "Top up",
                     "url": reverse_lazy("wallet:top-up"),
