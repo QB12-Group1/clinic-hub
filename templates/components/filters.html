@@ -1,0 +1,21 @@
+<form method="get" class="filter-panel">
+    <div class="flex items-center gap-2 border-b border-slate-100 pb-4"><span
+            class="grid size-9 place-items-center rounded-lg bg-primary/10 text-primary"><i data-lucide="list-filter"
+                                                                                            class="size-4"></i></span>
+        <div><h2 class="text-sm font-bold">Filter results</h2>
+            <p class="text-xs text-slate-400">Narrow down the records shown below.</p></div>
+    </div>
+    <div class="mt-5 grid gap-4 md:grid-cols-[minmax(16rem,1fr)_auto] md:items-end">
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{% for field in filters %}
+            <label class="block"><span class="field-label">{{ field.label }}</span>
+                <div class="relative"><i data-lucide="{{ field.icon|default:'search' }}"
+                                         class="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-slate-400"></i><input
+                        class="field-control pl-11" type="{{ field.type|default:'text' }}" name="{{ field.name }}"
+                        value="{{ field.value|default:'' }}" placeholder="{{ field.placeholder|default:'' }}"></div>
+            </label>{% endfor %}</div>
+        <div class="flex gap-2">
+            <button class="btn btn-primary min-h-12 px-5" type="submit"><i data-lucide="search" class="mr-1 size-4"></i>Search
+            </button>
+            <a class="btn btn-ghost min-h-12" href="{{ reset_url|default:request.path }}">Clear</a></div>
+    </div>
+</form>
