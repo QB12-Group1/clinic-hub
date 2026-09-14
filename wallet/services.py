@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.db import transaction
+
 from wallet.models import Transaction, Wallet
 
 User = get_user_model()
@@ -10,14 +11,16 @@ class InsufficientBalanceError(Exception):
 
 
 class WalletService:
-    def _validate_amount(self, amount: int) -> None:
+    @classmethod
+    def _validate_amount(cls, amount: int) -> None:
 
         if amount <= 0:
             raise ValueError("amount must be greater than 0")
 
-    def top_up_wallet(self, *, account: User, amount: int) -> Wallet:
+    @classmethod
+    def top_up_wallet(cls, *, account: User, amount: int) -> Wallet:
 
-        self._validate_amount(amount)
+        cls._validate_amount(amount)
 
         with transaction.atomic():
             wallet = Wallet.objects.select_for_update().get(account=account)
@@ -31,9 +34,10 @@ class WalletService:
             )
             return wallet
 
-    def debit_wallet(self, *, account: User, amount: int) -> Wallet:
+    @classmethod
+    def debit_wallet(cls, *, account: User, amount: int) -> Wallet:
 
-        self._validate_amount(amount)
+        cls._validate_amount(amount)
 
         with transaction.atomic():
             wallet = Wallet.objects.select_for_update().get(account=account)
