@@ -6,4 +6,5 @@ app_name = "wallet"
 
 urlpatterns = [
     path("", views.WalletDetailView.as_view(), name="detail"),
+    path("transaction/", views.TransactionListView.as_view(), name="transaction-list"),
 ]
