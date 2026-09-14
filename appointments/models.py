@@ -1,4 +1,5 @@
 from django.db import models
+from django.urls import reverse_lazy
 from django.utils.translation import gettext_lazy as _
 
 
@@ -26,6 +27,10 @@ class TimeSlot(models.Model):
     def __str__(self) -> str:
         status = "Booked" if self.is_booked else "Available"
         return f"{self.doctor} -{self.start_time:%Y-%m-%d %H:%M} ({status})"
+
+    @property
+    def book_url(self):
+        return reverse_lazy("appointments:book", kwargs={"pk": self.pk})
 
 
 class Appointment(models.Model):

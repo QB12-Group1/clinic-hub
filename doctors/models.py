@@ -11,6 +11,10 @@ class Specialty(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        verbose_name = "Specialty"
+        verbose_name_plural = "Specialties"
+
     def __str__(self) -> str:
         return self.name
 

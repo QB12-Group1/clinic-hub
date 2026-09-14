@@ -1,0 +1,15 @@
+{% extends "layouts/page.html" %}
+{% block title %}{{ page_title }} · Clinic Hub{% endblock %}
+{% block page_content %}
+    <section class="surface max-w-4xl p-6 sm:p-8">
+        <div class="grid gap-5 sm:grid-cols-2">{% for field in fields %}
+            <div>
+                <div class="eyebrow">{{ field.label }}</div>
+                <div class="mt-1 text-base font-semibold">{{ field.value|default:'—' }}</div>
+            </div>{% endfor %}</div>
+        <div class="mt-8 flex flex-wrap justify-end gap-2 border-t border-slate-100 pt-5"><a class="btn btn-ghost"
+                                                                                             href="{{ back_url }}">Back</a>{% if delete_url %}
+            {% include "components/confirm_modal.html" with trigger_label="Delete" trigger_class="btn-error" action_url=delete_url title="Delete this record?" message="This action cannot be undone." %}{% endif %}
+                {% if edit_url %}<a class="btn btn-primary" href="{{ edit_url }}">Edit</a>{% endif %}</div>
+    </section>
+{% endblock %}
