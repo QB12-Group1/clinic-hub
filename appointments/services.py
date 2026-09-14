@@ -8,7 +8,8 @@ class SlotAlreadyBookedError(Exception):
 
 
 class AppointmentService:
-    def book_time_slot(*, patient, time_slot_id: int) -> Appointment:
+    @classmethod
+    def book_time_slot(cls, *, patient, time_slot_id: int) -> Appointment:
 
         with transaction.atomic():
             slot = TimeSlot.objects.select_for_update().get(pk=time_slot_id)
