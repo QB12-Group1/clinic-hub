@@ -1,4 +1,5 @@
 from django.db import models
+from django.urls import reverse_lazy
 
 from core import settings
 
@@ -16,3 +17,27 @@ class Patient(models.Model):
 
     def __str__(self) -> str:
         return f"Patient: {self.account}"
+
+    @property
+    def full_name(self):
+        return self.account.get_full_name()
+
+    @property
+    def email(self):
+        return self.account.email
+
+    @property
+    def phone_number(self):
+        return self.account.phone_number
+
+    @property
+    def detail_url(self):
+        return reverse_lazy("patients:detail", kwargs={"pk": self.pk})
+
+    @property
+    def edit_url(self):
+        return reverse_lazy("patients:edit", kwargs={"pk": self.pk})
+
+    @property
+    def delete_url(self):
+        return reverse_lazy("patients:delete", kwargs={"pk": self.pk})

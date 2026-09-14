@@ -1,0 +1,18 @@
+<div x-data="{ open: false }" @keydown.escape.window="open = false">
+    <button type="button" class="btn {{ trigger_class|default:'btn-error btn-sm' }}" @click="open = true">
+        {% if trigger_icon %}<i data-lucide="{{ trigger_icon }}"
+                                class="size-4 {% if trigger_label %}mr-1{% endif %}"></i>{% endif %}{{ trigger_label|default:'Delete' }}
+    </button>
+    <div x-cloak x-show="open" x-transition class="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-4">
+        <div @click.outside="open = false" class="surface w-full max-w-md p-6"><h2
+                class="text-lg font-bold">{{ title|default:'Are you sure?' }}</h2>
+            <p class="mt-2 text-sm text-slate-500">{{ message|default:'This action cannot be undone.' }}</p>
+            <div class="mt-6 flex justify-end gap-2">
+                <button class="btn btn-ghost" @click="open = false">Cancel</button>
+                <form method="post" action="{{ action_url }}">{% csrf_token %}
+                    <button class="btn btn-error" type="submit">{{ confirm_label|default:'Confirm' }}</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

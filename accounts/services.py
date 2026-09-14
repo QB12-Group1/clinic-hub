@@ -11,7 +11,7 @@ from django.utils.translation import ngettext
 
 import utils
 from accounts.models import OTP
-from core.tasks import send_email_task, send_sms_task
+from core.tasks import send_sms_task
 
 
 class OTPServiceError(Exception):
@@ -30,7 +30,7 @@ class OTPService:
     ALLOWED_CHARS = string.digits
 
     @classmethod
-    def _check_params(cls, kwargs: dict) -> dict[str, str | None | OTP.Purpose]:
+    def _check_params(cls, kwargs: dict) -> dict[str, str]:
         purpose = kwargs.get("purpose")
         email = kwargs.get("email")
         phone_number = kwargs.get("phone_number")
@@ -38,12 +38,11 @@ class OTPService:
         if not purpose:
             raise ValueError("Missing required parameter: 'purpose'.")
 
-        has_email, has_phone_number = bool(email), bool(phone_number)
-        if not (has_email ^ has_phone_number):
-            raise ValueError("Exactly one of 'email' or 'phone_number' must be provided.")
+        if not email or not phone_number:
+            raise ValueError("Both 'email' and 'phone_number' are required.")
 
-        kwargs["email"] = BaseUserManager.normalize_email(email) if email else None
-        kwargs["phone_number"] = utils.normalize_phone_number(phone_number) if phone_number else None
+        kwargs["email"] = BaseUserManager.normalize_email(email)
+        kwargs["phone_number"] = utils.normalize_phone_number(phone_number)
         return kwargs
 
     @classmethod
@@ -54,8 +53,8 @@ class OTPService:
 
     @classmethod
     def _apply_cooldown(cls, **kwargs) -> None:
-        recipient, purpose = kwargs.get("email") or kwargs.get("phone_number"), kwargs.get("purpose")
-        cache_key = f"otp_cooldown:{recipient}:{purpose}"
+        email, phone_number, purpose = kwargs.get("email"), kwargs.get("phone_number"), kwargs.get("purpose")
+        cache_key = f"otp_cooldown:{email}:{phone_number}:{purpose}"
         cache.set(cache_key, True, timeout=cls.COOLDOWN_SECONDS)
 
     @classmethod
@@ -81,8 +80,8 @@ class OTPService:
     @classmethod
     def can_request_otp(cls, **kwargs) -> tuple[bool, int]:
         kwargs = cls._check_params(kwargs)
-        identifier, purpose = kwargs.get("email") or kwargs.get("phone_number"), kwargs.get("purpose")
-        cache_key = f"otp_cooldown:{identifier}:{purpose}"
+        email, phone_number, purpose = kwargs.get("email"), kwargs.get("phone_number"), kwargs.get("purpose")
+        cache_key = f"otp_cooldown:{email}:{phone_number}:{purpose}"
         remaining_ttl = cache.ttl(cache_key) if hasattr(cache, "ttl") else 0  # pyright: ignore[reportAttributeAccessIssue]
         if cache.get(cache_key):
             return False, remaining_ttl or cls.COOLDOWN_SECONDS
@@ -102,39 +101,16 @@ class OTPService:
         )
 
     @classmethod
-    def send_sms(cls, phone_number: str, purpose: str) -> OTP:
-        phone_number = utils.normalize_phone_number(phone_number)
+    def send_sms_with_fallback(cls, **kwargs) -> OTP:
+        kwargs = cls._check_params(kwargs)
+        email = kwargs.get("email")
+        phone_number = kwargs.get("phone_number")
+        purpose = kwargs.get("purpose") or OTP.Purpose.LOGIN
 
-        kwargs = {"phone_number": phone_number, "purpose": purpose}
-        cls._rate_limit_user(**kwargs)
-
-        with transaction.atomic():
-            cls.revoke_pending_otps(**kwargs)
-            raw_code, otp = cls._create_otp_project(**kwargs)
-            cls._apply_cooldown(**kwargs)
-
-        PURPOSE_CONFIG = {
-            "signup": {"action_text": "verify your email address"},
-            "login": {"action_text": "log into your account"},
-            "reset_password": {"action_text": "reset your password"},
-        }
-
-        config = PURPOSE_CONFIG.get(purpose, {"action_text": "complete your request"})
-
-        message_text = (
-            f"Your verification code to {config['action_text']} is: {raw_code}\n"
-            f"This code is valid for {cls.EXPIRY_MINUTES} minutes.\n"
-            "If you did not request this, please ignore this message."
-        )
-
-        send_sms_task.delay_on_commit(phone_number, message_text)  # pyright: ignore[reportAttributeAccessIssue]
-        return otp
-
-    @classmethod
-    def send_email(cls, email: str, purpose: str) -> OTP:
         email = BaseUserManager.normalize_email(email)
+        phone_number = utils.normalize_phone_number(phone_number)  # pyright: ignore[reportArgumentType]
 
-        kwargs = {"email": email, "purpose": purpose}
+        kwargs = {"email": email, "phone_number": phone_number, "purpose": purpose}
         cls._rate_limit_user(**kwargs)
 
         with transaction.atomic():
@@ -166,7 +142,16 @@ class OTPService:
             "If you did not request this, please ignore this email."
         )
 
-        send_email_task.delay_on_commit(subject, message_text, email)  # pyright: ignore[reportAttributeAccessIssue]
+        transaction.on_commit(
+            lambda: send_sms_task.delay(
+                phone_number=phone_number,
+                message_text=message_text,
+                fallback_email=email,
+                fallback_subject=subject,
+                fallback_message_text=message_text,
+            )
+        )
+
         return otp
 
     @classmethod

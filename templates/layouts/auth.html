@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block content %}
+    <div class="grid min-h-screen lg:grid-cols-2">
+        <div class="hidden flex-col justify-between bg-slate-950 p-10 text-white lg:flex">
+            <div class="flex items-center gap-3">
+                <div class="grid size-10 place-items-center rounded-xl bg-primary text-white"><i data-lucide="activity"
+                                                                                                 class="size-5"></i>
+                </div>
+                <div>
+                    <div class="font-extrabold tracking-tight">Clinic Hub</div>
+                    <div class="text-xs text-slate-400">Care, connected.</div>
+                </div>
+            </div>
+            <div class="max-w-sm">
+                <h2 class="text-3xl font-extrabold leading-tight">{% block auth_hero_title %}Welcome back to your care
+                    team.{% endblock %}</h2>
+                <p class="mt-4 text-sm leading-6 text-slate-300">{% block auth_hero_subtitle %}Book appointments, track
+                    visits, and stay in touch with your doctors, all in one place.{% endblock %}</p>
+            </div>
+            <p class="text-xs text-slate-500">&copy; {% now "Y" %} Clinic Hub. All rights reserved.</p>
+        </div>
+        <div class="flex items-center justify-center px-4 py-10 sm:px-8">
+            <div class="w-full max-w-sm">
+                <div class="mb-8 flex items-center gap-3 lg:hidden">
+                    <div class="grid size-10 place-items-center rounded-xl bg-primary text-white"><i
+                            data-lucide="activity" class="size-5"></i></div>
+                    <div>
+                        <div class="font-extrabold tracking-tight">Clinic Hub</div>
+                        <div class="text-xs text-slate-400">Care, connected.</div>
+                    </div>
+                </div>
+                {% block auth_content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+{% endblock %}
