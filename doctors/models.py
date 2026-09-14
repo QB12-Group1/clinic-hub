@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.db import models
-from django.urls import reverse_lazy
+from django.urls import reverse
 
 from validators import PhoneNumberValidator
 
@@ -17,6 +17,18 @@ class Specialty(models.Model):
 
     def __str__(self) -> str:
         return self.name
+
+    @property
+    def detail_url(self) -> None:
+        return None
+
+    @property
+    def edit_url(self) -> str:
+        return reverse("doctors:specialty-edit", kwargs={"pk": self.pk})
+
+    @property
+    def delete_url(self) -> str:
+        return reverse("doctors:specialty-delete", kwargs={"pk": self.pk})
 
 
 # TODO: separate practice information into it's own model
@@ -38,13 +50,21 @@ class Doctor(models.Model):
         return f"Dr. {self.account.get_full_name()}"
 
     @property
-    def full_name(self):
+    def full_name(self) -> str:
         return self.account.get_full_name()
 
     @property
-    def detail_url(self):
-        return reverse_lazy("doctors:detail", kwargs={"pk": self.pk})
+    def specialty_names(self) -> str:
+        return ", ".join(s.name for s in self.specialties.all())
 
     @property
-    def review_url(self):
-        return reverse_lazy("doctors:reviews", kwargs={"pk": self.pk})
+    def detail_url(self) -> str:
+        return reverse("doctors:detail", kwargs={"pk": self.pk})
+
+    @property
+    def edit_url(self) -> None:
+        return None
+
+    @property
+    def delete_url(self) -> str:
+        return reverse("doctors:delete", kwargs={"pk": self.pk})
