@@ -1,16 +1,19 @@
 from datetime import timedelta
+
 from django.db import IntegrityError, transaction
 from django.test import TestCase
 from django.utils import timezone
+
 from accounts.models import User
 from appointments.models import Appointment, TimeSlot
 from doctors.models import Doctor
-from patients.models import Patient
 
 
 class TimeSlotModelTests(TestCase):
     def setUp(self):
-        account = User.objects.create_user(phone_number="09123456789", email="test@example.com", first_name="Ali", last_name="Rezaei")  # pyright:ignore[reportCallIssue]
+        account = User.objects.create_user(
+            phone_number="09123456789", email="test@example.com", first_name="Ali", last_name="Rezaei"
+        )  # pyright:ignore[reportCallIssue]
         self.doctor = Doctor.objects.create(
             account=account, practice_address="Tehran", practice_phone_number="09121112233", visit_fee=500000
         )
@@ -23,23 +26,26 @@ class TimeSlotModelTests(TestCase):
         self.assertFalse(slot.is_booked)
 
     def test_end_time_must_be_after_start_time(self):
-        with self.assertRaises(IntegrityError):
-            with transaction.atomic():
-                TimeSlot.objects.create(
-                    doctor=self.doctor,
-                    start_time=self.now,
-                    end_time=self.now - timedelta(minutes=30),
-                )
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            TimeSlot.objects.create(
+                doctor=self.doctor,
+                start_time=self.now,
+                end_time=self.now - timedelta(minutes=30),
+            )
 
 
 class AppointmentModelTests(TestCase):
     def setUp(self):
-        doctor_account = User.objects.create_user(phone_number="09123456789", email="doctor@example.com",first_name="Ali", last_name="Rezaei")  # pyright:ignore[reportCallIssue]
+        doctor_account = User.objects.create_user(
+            phone_number="09123456789", email="doctor@example.com", first_name="Ali", last_name="Rezaei"
+        )  # pyright:ignore[reportCallIssue]
         self.doctor = Doctor.objects.create(
             account=doctor_account, practice_address="Tehran", practice_phone_number="09121112233", visit_fee=500000
         )
-        patient_account = User.objects.create_user(phone_number="09121234567",email="patient@example.com", first_name="Sara", last_name="Ahmadi")  # pyright:ignore[reportCallIssue]
-        self.patient = Patient.objects.create(account=patient_account)
+        patient_account = User.objects.create_user(
+            phone_number="09121234567", email="patient@example.com", first_name="Sara", last_name="Ahmadi"
+        )  # pyright:ignore[reportCallIssue]
+        self.patient = patient_account.patient_profile
         now = timezone.now()
         self.slot = TimeSlot.objects.create(doctor=self.doctor, start_time=now, end_time=now + timedelta(minutes=30))
 
@@ -52,11 +58,8 @@ class AppointmentModelTests(TestCase):
 
     def test_cannot_have_two_active_appointments_on_same_slot(self):
         Appointment.objects.create(patient=self.patient, time_slot=self.slot, status=Appointment.Status.CONFIRMED)
-        with self.assertRaises(IntegrityError):
-            with transaction.atomic():
-                Appointment.objects.create(
-                    patient=self.patient, time_slot=self.slot, status=Appointment.Status.CONFIRMED
-                )
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            Appointment.objects.create(patient=self.patient, time_slot=self.slot, status=Appointment.Status.CONFIRMED)
 
         self.assertEqual(Appointment.objects.filter(time_slot=self.slot).count(), 1)
 

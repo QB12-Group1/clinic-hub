@@ -12,13 +12,13 @@ class WalletModelTests(TestCase):
         self.account = User.objects.create_user(phone_number="09123456789", email="test@example.com", first_name="Ali")  # pyright: ignore[reportCallIssue]
 
     def test_wallet_default_balance_is_zero(self):
-        wallet = Wallet.objects.create(account=self.account)
+        wallet = self.account.wallet
         self.assertIsNotNone(wallet.pk)
         self.assertEqual(wallet.account, self.account)
         self.assertEqual(wallet.balance, 0)
 
     def test_one_account_cannot_have_two_wallets(self):
-        Wallet.objects.create(account=self.account)
+        Wallet.objects.get_or_create(account=self.account)
         with self.assertRaises(IntegrityError), transaction.atomic():
             Wallet.objects.create(account=self.account)
 
@@ -26,7 +26,7 @@ class WalletModelTests(TestCase):
 class TransactionModelTests(TestCase):
     def setUp(self):
         account = User.objects.create_user(phone_number="09123456789", email="test@example.com", first_name="Ali")  # pyright: ignore[reportCallIssue]
-        self.wallet = Wallet.objects.create(account=account)
+        self.wallet = account.wallet
 
     def test_transaction_creation_and_related_name(self):
         WalletTransaction.objects.create(
@@ -38,7 +38,7 @@ class TransactionModelTests(TestCase):
 class ToUpWalletServiceTests(TestCase):
     def setUp(self) -> None:
         self.account = User.objects.create_user(phone_number="09123456789", email="test@example.com", first_name="Ali")  # pyright: ignore[reportCallIssue]
-        self.wallet = Wallet.objects.create(account=self.account)
+        self.wallet = self.account.wallet
 
     def test_top_up_increases_balance(self) -> None:
         WalletService.top_up_wallet(account=self.account, amount=500000)
@@ -60,7 +60,9 @@ class ToUpWalletServiceTests(TestCase):
 class DebitWalletServiceTests(TestCase):
     def setUp(self) -> None:
         self.account = User.objects.create_user(phone_number="09123456789", email="test@example.com", first_name="Ali")  # pyright: ignore[reportCallIssue]
-        self.wallet = Wallet.objects.create(account=self.account, balance=100000)
+        self.wallet = self.account.wallet
+        self.wallet.balance = 100000
+        self.wallet.save(update_fields=["balance"])
 
     def test_charge_decreases_balance(self) -> None:
         WalletService.charge_wallet(account=self.account, amount=40000)
