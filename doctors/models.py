@@ -34,6 +34,10 @@ class Doctor(models.Model):
         return f"Dr. {self.account.get_full_name()}"
 
     @property
+    def full_name(self):
+        return self.account.get_full_name()
+
+    @property
     def detail_url(self):
         return reverse_lazy("doctors:detail", kwargs={"pk": self.pk})
 

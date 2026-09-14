@@ -30,7 +30,7 @@ class RegisterView(UserPassesTestMixin, FormView):
         return not self.request.user.is_authenticated
 
     def handle_no_permission(self) -> HttpResponseRedirect:
-        return redirect("patients:home")  # TODO: redirect the user to the home page
+        return redirect("home")  # TODO: redirect the user to the home page
 
     def form_valid(self, form: RegisterForm) -> HttpResponse:
         self.request.session["auth_data"] = {"credentials": {**form.cleaned_data}, "purpose": OTP.Purpose.SIGNUP}
@@ -68,7 +68,7 @@ class LoginView(UserPassesTestMixin, FormView):
         return not self.request.user.is_authenticated
 
     def handle_no_permission(self) -> HttpResponseRedirect:
-        return redirect("patients:home")  # TODO: redirect user to the home page
+        return redirect("home")  # TODO: redirect user to the home page
 
     def form_valid(self, form: LoginForm) -> HttpResponse:
         credential = form.cleaned_data["credential"]
@@ -102,7 +102,7 @@ class LogoutView(LoginRequiredMixin, TemplateView):
 
     def post(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
         logout(request)
-        return redirect("patients:home")  # TODO: redirect the user to the home page
+        return redirect("home")  # TODO: redirect the user to the home page
 
 
 class RequestOTPView(View):
@@ -144,7 +144,7 @@ class VerifyOTPView(FormView):
                     login(self.request, user)
 
         del auth_data
-        return redirect("patients:home")  # TODO: redirect the user to the home page
+        return redirect("home")  # TODO: redirect the user to the home page
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         credentials = self.request.session["auth_data"]["credentials"]
