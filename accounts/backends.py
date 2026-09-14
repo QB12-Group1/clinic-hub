@@ -17,8 +17,8 @@ class PhoneBackend(BaseBackend):
     def authenticate(
         self,
         request: HttpRequest | None,
-        phone_number: str | None = None,
         email: str | None = None,
+        phone_number: str | None = None,
         **kwargs: Any,
     ) -> User | None:
         if not phone_number:

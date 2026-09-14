@@ -7,14 +7,58 @@ from django.forms import ModelForm
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
-from django.views.generic import CreateView, DetailView, ListView, UpdateView
+from django.utils import timezone
+from django.views.generic import CreateView, DetailView, ListView, TemplateView, UpdateView
 from django.views.generic.edit import DeleteView
 
-from accounts.mixins import StaffRequiredMixins
+from accounts.mixins import PatientRequiredMixins, StaffRequiredMixins
+from appointments.models import Appointment, TimeSlot
+from doctors.models import Doctor
+from reviews.models import Review
 
 from .models import Patient
 
 User = get_user_model()
+
+
+class PatientHomeView(PatientRequiredMixins, TemplateView):
+    template_name = "pages/patient_home.html"
+
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+        patient_profile = user.patient_profile  # pyright: ignore[reportAttributeAccessIssue]
+        next_appointment = (
+            patient_profile.appointments.select_related("time_slot")
+            .filter(time_slot__start_time__gte=timezone.now())
+            .exclude(status=Appointment.Status.CANCELED)
+            .order_by("time_slot__start_time")
+            .first()
+        )
+        reviews_count = Review.objects.filter(appointment__patient=patient_profile).count()
+        active_appointments_count = patient_profile.appointments.exclude(status=Appointment.Status.CANCELED).count()
+        doctors = Doctor.objects.all()
+        available_slots = TimeSlot.objects.filter(is_booked=False)
+        recent_appointments = (
+            patient_profile.appointments.select_related("time_slot")
+            .filter(status=Appointment.Status.CONFIRMED, time_slot__start_time__gte=timezone.now())
+            .order_by("time_slot__start_time")
+        )
+        charge_wallet_url = reverse_lazy("wallet:charge", kwargs={"pk": user.wallet.pk})  # pyright: ignore[reportAttributeAccessIssue]
+        context.update(
+            {
+                "user": user,
+                "wallet": user.wallet,  # pyright: ignore[reportAttributeAccessIssue]
+                "next_appointment": next_appointment,
+                "reviews_count": reviews_count,
+                "active_appointments_count": active_appointments_count,
+                "doctors": doctors,
+                "available_slots": available_slots,
+                "recent_appointments": recent_appointments,
+                "charge_wallet_url": charge_wallet_url,
+            }
+        )
+        return context
 
 
 class PatientListView(ListView):

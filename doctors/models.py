@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.urls import reverse_lazy
 
 from validators import PhoneNumberValidator
 
@@ -31,3 +32,11 @@ class Doctor(models.Model):
 
     def __str__(self) -> str:
         return f"Dr. {self.account.get_full_name()}"
+
+    @property
+    def detail_url(self):
+        return reverse_lazy("doctors:detail", kwargs={"pk": self.pk})
+
+    @property
+    def review_url(self):
+        return reverse_lazy("doctors:reviews", kwargs={"pk": self.pk})
